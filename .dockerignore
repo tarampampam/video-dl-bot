@@ -1,0 +1,7 @@
+## Ignore everything
+*
+
+## Except the following files and directories
+!/cmd
+!/internal
+!/go.*
