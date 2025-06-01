@@ -15,5 +15,5 @@ max_line_length = 120
 ij_any_spaces_within_braces = false
 ij_any_spaces_within_brackets = false
 
-[Makefile]
+[{Makefile,go.mod,*.go}]
 indent_style = tab
