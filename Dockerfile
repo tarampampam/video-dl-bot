@@ -1,5 +1,6 @@
 # syntax=docker/dockerfile:1
 
+# -✂- this is the base image with python installed --------------------------------------------------------------------
 FROM docker.io/library/python:3.13-slim-bookworm AS python
 
 # -✂- this stage is used to download the latest version of FFmpeg -----------------------------------------------------

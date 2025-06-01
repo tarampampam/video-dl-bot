@@ -40,8 +40,6 @@ func (r systemRunner) Run(ctx context.Context, exe string, args ...string) (*Run
 		startedAt      = time.Now()
 	)
 
-	fmt.Println(args)
-
 	// attach the buffers to the command's output streams
 	cmd.Stdout = stdout
 	cmd.Stderr = stderr

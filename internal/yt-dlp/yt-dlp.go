@@ -72,6 +72,8 @@ func (o options) Apply(opts ...Option) options {
 
 // Download downloads a single video from the given URL using yt-dlp.
 // It writes output to a temp directory and returns structured metadata.
+// The caller is responsible for cleaning up the downloaded file.
+// TODO: make file size limits configurable via options.
 func Download(ctx context.Context, in string, opts ...Option) (_ *Downloaded, outErr error) {
 	// defer error wrapping to include module-specific prefix
 	defer func() {
