@@ -8,6 +8,8 @@
 
 ## Temp dirs & trash
 *.env
+*.mp4
+*.mp3
 /temp
 /tmp
 .DS_Store

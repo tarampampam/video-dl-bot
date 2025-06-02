@@ -15,7 +15,7 @@ import (
 const errPrefix = "yt-dlp" // error prefix for all yt-dlp errors
 
 // Locate yt-dlp binary once at package initialization. Will be empty string if not found.
-var exePath, _ = exec.LookPath("yt-dlp")
+var exePath, _ = exec.LookPath("yt-dlp") //nolint:gochecknoglobals
 
 // Downloaded holds metadata and file path of the downloaded video.
 type Downloaded struct {
@@ -74,7 +74,7 @@ func (o options) Apply(opts ...Option) options {
 // It writes output to a temp directory and returns structured metadata.
 // The caller is responsible for cleaning up the downloaded file.
 // TODO: make file size limits configurable via options.
-func Download(ctx context.Context, in string, opts ...Option) (_ *Downloaded, outErr error) {
+func Download(ctx context.Context, in string, opts ...Option) (_ *Downloaded, outErr error) { //nolint:funlen
 	// defer error wrapping to include module-specific prefix
 	defer func() {
 		if outErr != nil {
@@ -109,7 +109,8 @@ func Download(ctx context.Context, in string, opts ...Option) (_ *Downloaded, ou
 		"--abort-on-unavailable-fragments", // abort download if a fragment is unavailable
 		// filesystem options
 		"--paths", tmpDir, // set the path to the temporary directory
-		"--output", "result.%(ext)s", // output filename template (https://github.com/yt-dlp/yt-dlp?tab=readme-ov-file#output-template)
+		// output filename template (https://github.com/yt-dlp/yt-dlp?tab=readme-ov-file#output-template)
+		"--output", "result.%(ext)s",
 		"--restrict-filenames",    // restrict filenames to only ASCII characters, and avoid "&" and spaces in filenames
 		"--trim-filenames", "128", // limit the filename length (excluding extension)
 		"--no-overwrites",           // do not overwrite any files
