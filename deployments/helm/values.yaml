@@ -33,8 +33,8 @@ deployment:
     runAsGroup: 10001 # as defined in the Dockerfile
     readOnlyRootFilesystem: false # when you mount a volume, you can set this to true
   resources:
-    requests: {memory: 16Mi}
-    limits: {memory: 64Mi}
+    requests: {memory: 256Mi}
+    limits: {memory: 512Mi}
   # -- Additional volumes to add to the pod, more information can be found here:
   #    https://kubernetes.io/docs/concepts/storage/volumes/
   volumes: [] # supports templating
