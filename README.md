@@ -1,5 +1,9 @@
 # Video Downloader Bot
 
+## TODO:
+
+- Add health check for the bot (and add it to the Helm chart)
+
 <!--GENERATED:APP_README-->
 ## 💻 Command line interface
 

@@ -198,8 +198,14 @@ func (b *Bot) handleMessages(pCtx context.Context, lim Limiter) tele.HandlerFunc
 
 		defer stopDownloadingAction()
 
+		var ytDlpOpts []ytdlp.Option
+
+		if b.cookiesFile != "" {
+			ytDlpOpts = append(ytDlpOpts, ytdlp.WithCookiesFile(b.cookiesFile))
+		}
+
 		// download the video
-		dl, dlErr := ytdlp.Download(ctx, userUrl.String())
+		dl, dlErr := ytdlp.Download(ctx, userUrl.String(), ytDlpOpts...)
 		if dlErr != nil {
 			b.log.Error("failed to download video",
 				slog.String("error", dlErr.Error()),
