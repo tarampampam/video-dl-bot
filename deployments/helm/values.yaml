@@ -77,17 +77,8 @@ config:
       configMapName: null # supports templating
       configMapKey: null  # supports templating
 
-  cookiesFile:
-    fromSecret:
-      # -- Enable getting the cookies file content from a secret
-      enabled: false
-      secretName: null # supports templating
-      secretKey: null  # supports templating
-    fromConfigMap:
-      # -- Enable getting the cookies file content from a config map
-      enabled: false
-      configMapName: null # supports templating
-      configMapKey: null  # supports templating
+  # -- Path to the file with cookies (netscape-formatted) for the bot (usually, mounted from a secret)
+  cookiesFile: null
 
   # -- Maximum number of concurrent downloads
   # @default 5

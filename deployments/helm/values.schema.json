@@ -206,25 +206,7 @@
           }
         },
         "cookiesFile": {
-          "type": "object",
-          "properties": {
-            "fromSecret": {
-              "type": "object",
-              "properties": {
-                "enabled": {"type": "boolean"},
-                "secretName": {"oneOf": [{"type": "string", "minLength": 1}, {"type": "null"}]},
-                "secretKey": {"oneOf": [{"type": "string", "minLength": 1}, {"type": "null"}]}
-              }
-            },
-            "fromConfigMap": {
-              "type": "object",
-              "properties": {
-                "enabled": {"type": "boolean"},
-                "configMapName": {"oneOf": [{"type": "string", "minLength": 1}, {"type": "null"}]},
-                "configMapKey": {"oneOf": [{"type": "string", "minLength": 1}, {"type": "null"}]}
-              }
-            }
-          }
+          "oneOf": [{"type": "string", "minLength": 1}, {"type": "null"}]
         },
         "maxConcurrentDownloads": {
           "oneOf": [{"type": "integer", "minimum": 1, "maximum": 100}, {"type": "null"}]
