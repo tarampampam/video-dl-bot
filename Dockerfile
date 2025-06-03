@@ -106,11 +106,13 @@ LABEL \
 COPY --from=ffmpeg /bin/ffmpeg /bin/ffprobe /bin/
 COPY --from=yt-dlp /bin/yt-dlp /bin/yt-dlp
 COPY --from=compiler /src/video-dl-bot /bin/video-dl-bot
+COPY docker-entrypoint.sh /docker-entrypoint.sh
 
 # prepare the rootfs for scratch
 RUN set -x \
     && echo 'video-dl-bot:x:10001:10001::/tmp:/sbin/nologin' >> /etc/passwd \
-    && echo 'video-dl-bot:x:10001:' >> /etc/group
+    && echo 'video-dl-bot:x:10001:' >> /etc/group \
+    && chmod +x /docker-entrypoint.sh
 
 # use an unprivileged user
 USER 10001:10001
@@ -123,4 +125,5 @@ ENV \
   # logging level
   LOG_LEVEL=info
 
-ENTRYPOINT ["/bin/video-dl-bot"]
+ENTRYPOINT ["/docker-entrypoint.sh"]
+CMD ["/bin/video-dl-bot"]
