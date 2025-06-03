@@ -68,6 +68,22 @@ spec:
               value: "VALUES ERROR: config.botToken is not set"
             {{- end }}
             {{- end }}
+            {{- with $.Values.config.cookiesFile }}
+            {{- $cookiesFileEnvName := "COOKIES_FILE" }}
+            {{- if .fromSecret.enabled }}
+            - name: "{{ $cookiesFileEnvName }}"
+              valueFrom:
+                secretKeyRef:
+                  name: {{ tpl .fromSecret.secretName $ | quote }}
+                  key: {{ tpl .fromSecret.secretKey $ | quote }}
+            {{- else if .fromConfigMap.enabled }}
+            - name: "{{ $cookiesFileEnvName }}"
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ tpl .fromConfigMap.configMapName $ | quote }}
+                  key: {{ tpl .fromConfigMap.configMapKey $ | quote }}
+            {{- end }}
+            {{- end }}
             {{- with $.Values.config }}
             {{- if .log.level }}
             - {name: LOG_LEVEL, value: "{{ .log.level }}"}

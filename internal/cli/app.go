@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"os"
 	"regexp"
 	"strings"
 
@@ -20,6 +21,7 @@ type App struct {
 	cmd cmd.Command
 	opt struct {
 		BotToken               string
+		CookiesFile            string
 		MaxConcurrentDownloads uint
 	}
 }
@@ -86,6 +88,23 @@ func NewApp(name string) *App { //nolint:funlen
 				return nil
 			},
 		}
+		cookiesFileFlag = cmd.Flag[string]{
+			Names:   []string{"cookies-file", "c"},
+			Usage:   "Path to the file with cookies (netscape-formatted) for the bot (optional)",
+			EnvVars: []string{"COOKIES_FILE"},
+			Default: app.opt.CookiesFile,
+			Validator: func(_ *cmd.Command, v string) error {
+				if v != "" {
+					if stat, err := os.Stat(v); err != nil {
+						return fmt.Errorf("failed to access cookies file: %w", err)
+					} else if stat.IsDir() {
+						return fmt.Errorf("cookies file path cannot be a directory")
+					}
+				}
+
+				return nil
+			},
+		}
 		maxConcurrentDownloadsFlag = cmd.Flag[uint]{
 			Names:   []string{"max-concurrent-downloads", "m"},
 			Usage:   "Maximum number of concurrent downloads",
@@ -105,6 +124,7 @@ func NewApp(name string) *App { //nolint:funlen
 		&logLevelFlag,
 		&logFormatFlag,
 		&botTokenFlag,
+		&cookiesFileFlag,
 		&maxConcurrentDownloadsFlag,
 	}
 
@@ -121,6 +141,7 @@ func NewApp(name string) *App { //nolint:funlen
 		}
 
 		setIfFlagIsSet(&app.opt.BotToken, botTokenFlag)
+		setIfFlagIsSet(&app.opt.CookiesFile, cookiesFileFlag)
 		setIfFlagIsSet(&app.opt.MaxConcurrentDownloads, maxConcurrentDownloadsFlag)
 
 		return app.run(ctx, log)
@@ -146,12 +167,27 @@ func (a *App) Help() string { return a.cmd.Help() }
 
 // run contains the main bot initialization and event loop.
 func (a *App) run(ctx context.Context, log *slog.Logger) error {
-	b, err := bot.NewBot(ctx, log.With("source", "telebot"), a.opt.BotToken, a.opt.MaxConcurrentDownloads)
+	var botOpts = []bot.Option{
+		bot.WithLogger(log.With("source", "telebot")),
+		bot.WithMaxConcurrentDownloads(a.opt.MaxConcurrentDownloads),
+	}
+
+	if a.opt.CookiesFile != "" {
+		botOpts = append(botOpts, bot.WithCookiesFile(a.opt.CookiesFile))
+	} else {
+		log.Warn("No cookies file provided, some sites may not work without it")
+	}
+
+	b, err := bot.NewBot(ctx, a.opt.BotToken, botOpts...)
 	if err != nil {
 		return fmt.Errorf("failed to create bot: %w", err)
 	}
 
+	log.Info("starting bot")
+
 	b.Start(ctx) // blocking call
+
+	log.Info("bot stopped")
 
 	return nil
 }

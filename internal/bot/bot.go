@@ -14,12 +14,6 @@ import (
 	ytdlp "gh.tarampamp.am/video-dl-bot/internal/yt-dlp"
 )
 
-// Bot wraps the Telegram bot client.
-type Bot struct {
-	log    *slog.Logger
-	client *tele.Bot
-}
-
 // Emojis used for user interaction feedback.
 const (
 	emojiBadRequest  = "💩" // emoji to react with when the user provided a bad request
@@ -33,15 +27,48 @@ const (
 	actUploading   = tele.UploadingVideo
 )
 
+type (
+	// Bot wraps the Telegram bot client.
+	Bot struct {
+		cookiesFile            string // path to the cookies file (if any)
+		maxConcurrentDownloads uint   // maximum number of concurrent downloads allowed
+
+		log    *slog.Logger
+		client *tele.Bot
+	}
+
+	// Option defines a functional option type for customizing the Bot.
+	Option func(*Bot)
+)
+
+// WithLogger sets a custom logger for the Bot instance.
+func WithLogger(log *slog.Logger) Option { return func(b *Bot) { b.log = log } }
+
+// WithCookiesFile sets the path to a cookies file, used by yt-dlp for authenticated downloads.
+func WithCookiesFile(path string) Option { return func(b *Bot) { b.cookiesFile = path } }
+
+// WithMaxConcurrentDownloads limits the number of concurrent downloads the bot can handle.
+func WithMaxConcurrentDownloads(n uint) Option {
+	return func(b *Bot) { b.maxConcurrentDownloads = max(1, min(100, n)) } //nolint:mnd
+}
+
 // NewBot creates and returns a new instance of Bot.
-func NewBot(ctx context.Context, log *slog.Logger, token string, maxConcurrentDownloads uint) (*Bot, error) {
+func NewBot(ctx context.Context, token string, opts ...Option) (*Bot, error) {
 	const pollerTimeout = 10 * time.Second // default timeout for the long poller
+
+	var bot = Bot{ // set default values
+		log: slog.Default(),
+	}
+
+	for _, opt := range opts {
+		opt(&bot)
+	}
 
 	client, err := tele.NewBot(tele.Settings{
 		Token:  token,
 		Poller: &tele.LongPoller{Timeout: pollerTimeout},
 		OnError: func(err error, c tele.Context) {
-			log.Error(
+			bot.log.Error(
 				"telegram client error",
 				slog.String("error", err.Error()),
 				slog.String("sender_name", c.Sender().FirstName),
@@ -53,10 +80,9 @@ func NewBot(ctx context.Context, log *slog.Logger, token string, maxConcurrentDo
 		return nil, err
 	}
 
-	var (
-		bot = Bot{log: log, client: client}
-		lim = make(Limiter, maxConcurrentDownloads)
-	)
+	bot.client = client
+
+	var lim = make(Limiter, bot.maxConcurrentDownloads)
 
 	// register command and message handlers
 	client.Handle("/start", bot.handleStartCommand())

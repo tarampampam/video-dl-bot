@@ -34,8 +34,9 @@ type Downloaded struct {
 type (
 	// options contains runtime configuration for yt-dlp commands.
 	options struct {
-		runner  runner // Interface to run system commands
-		exePath string // Path to yt-dlp binary
+		runner      runner // Interface to run system commands
+		exePath     string // Path to yt-dlp binary
+		cookiesFile string // Path to cookies file (optional, for sites requiring authentication)
 	}
 
 	// Option is a function that configures options.
@@ -47,6 +48,9 @@ func WithRunner(r runner) Option { return func(o *options) { o.runner = r } }
 
 // WithExePath sets the path to the yt-dlp executable.
 func WithExePath(path string) Option { return func(o *options) { o.exePath = path } }
+
+// WithCookiesFile sets the path to a cookies file for yt-dlp.
+func WithCookiesFile(path string) Option { return func(o *options) { o.cookiesFile = path } }
 
 // Apply sets default values and applies any functional options.
 func (o options) Apply(opts ...Option) options {
@@ -91,43 +95,52 @@ func Download(ctx context.Context, in string, opts ...Option) (_ *Downloaded, ou
 	defer func() { _ = os.RemoveAll(tmpDir) }() // clean up the temporary directory on return
 
 	// initialize options
-	var o = options{}.Apply(opts...)
+	var (
+		o    = options{}.Apply(opts...)
+		args = []string{
+			// general options
+			"--ignore-config",  // don't load any more configuration files except those given to --config-locations
+			"--color", "never", // disable colored output
+			// video selection
+			"--min-filesize", "50k", // abort download if filesize is smaller than
+			"--max-filesize", "2G", // abort download if filesize is larger than
+			"--no-playlist", // download only the video, if the URL refers to a video and a playlist
+			// download options
+			"--concurrent-fragments", "1", // number of fragments of a dash/hlsnative video that should be downloaded conc-ly
+			"--retries", "5", // number of retries (default is 10), or "infinite"
+			"--fragment-retries", "5", // number of retries for a fragment (default is 10), or "infinite"
+			"--abort-on-unavailable-fragments", // abort download if a fragment is unavailable
+			// filesystem options
+			"--paths", tmpDir, // set the path to the temporary directory
+			// output filename template (https://github.com/yt-dlp/yt-dlp?tab=readme-ov-file#output-template)
+			"--output", "result.%(ext)s",
+			"--restrict-filenames",    // restrict filenames to only ASCII characters, and avoid "&" and spaces in filenames
+			"--trim-filenames", "128", // limit the filename length (excluding extension)
+			"--no-overwrites",           // do not overwrite any files
+			"--no-continue",             // do not resume partially downloaded fragments
+			"--no-mtime",                // do not use the Last-modified header to set the file modification time
+			"--write-info-json",         // write video metadata to a .info.json file
+			"--no-write-comments",       // do not retrieve video comments unless the extraction is known to be quick
+			"--cache-dir", os.TempDir(), // where yt-dlp can store some downloaded information permanently
+			// verbosity and simulation options
+			"--no-progress", // do not print progress bar
+			// video format options
+			// https://github.com/yt-dlp/yt-dlp?tab=readme-ov-file#format-selection
+			"--format", "bv*[ext=mp4][filesize<2G]+ba[ext=m4a][filesize<2G]/bv*[ext=mp4]+ba[ext=m4a]/best[filesize<2G]/best",
+			"--no-post-overwrites", // do not overwrite post-processed files
+			"--no-embed-info-json", // do not embed the infojson as an attachment to the video file
+		}
+	)
+
+	if o.cookiesFile != "" {
+		args = append(args,
+			"--cookies", // Netscape formatted file to read cookies from
+			o.cookiesFile,
+		)
+	}
 
 	// run yt-dlp with selected flags
-	if _, err := o.runner.Run(ctx, o.exePath,
-		// general options
-		"--ignore-config",  // don't load any more configuration files except those given to --config-locations
-		"--color", "never", // disable colored output
-		// video selection
-		"--min-filesize", "50k", // abort download if filesize is smaller than
-		"--max-filesize", "2G", // abort download if filesize is larger than
-		"--no-playlist", // download only the video, if the URL refers to a video and a playlist
-		// download options
-		"--concurrent-fragments", "1", // number of fragments of a dash/hlsnative video that should be downloaded concurrently
-		"--retries", "5", // number of retries (default is 10), or "infinite"
-		"--fragment-retries", "5", // number of retries for a fragment (default is 10), or "infinite"
-		"--abort-on-unavailable-fragments", // abort download if a fragment is unavailable
-		// filesystem options
-		"--paths", tmpDir, // set the path to the temporary directory
-		// output filename template (https://github.com/yt-dlp/yt-dlp?tab=readme-ov-file#output-template)
-		"--output", "result.%(ext)s",
-		"--restrict-filenames",    // restrict filenames to only ASCII characters, and avoid "&" and spaces in filenames
-		"--trim-filenames", "128", // limit the filename length (excluding extension)
-		"--no-overwrites",           // do not overwrite any files
-		"--no-continue",             // do not resume partially downloaded fragments
-		"--no-mtime",                // do not use the Last-modified header to set the file modification time
-		"--write-info-json",         // write video metadata to a .info.json file
-		"--no-write-comments",       // do not retrieve video comments unless the extraction is known to be quick
-		"--cache-dir", os.TempDir(), // where yt-dlp can store some downloaded information permanently
-		// verbosity and simulation options
-		"--no-progress", // do not print progress bar
-		// video format options
-		// https://github.com/yt-dlp/yt-dlp?tab=readme-ov-file#format-selection
-		"--format", "bv*[ext=mp4][filesize<2G]+ba[ext=m4a][filesize<2G]/bv*[ext=mp4]+ba[ext=m4a]/best[filesize<2G]/best",
-		"--no-post-overwrites", // do not overwrite post-processed files
-		"--no-embed-info-json", // do not embed the infojson as an attachment to the video file
-		in,
-	); err != nil {
+	if _, err := o.runner.Run(ctx, o.exePath, append(args, in)...); err != nil {
 		return nil, fmt.Errorf("failed to download: %w", err)
 	}
 
