@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"path/filepath"
 	"regexp"
 	"strings"
 
@@ -27,7 +28,7 @@ type App struct {
 }
 
 // NewApp initializes a new CLI application instance.
-func NewApp(name string) *App { //nolint:funlen
+func NewApp(name string) *App { //nolint:funlen,gocognit,gocyclo
 	var app = App{
 		cmd: cmd.Command{
 			Name:        name,
@@ -143,6 +144,35 @@ func NewApp(name string) *App { //nolint:funlen
 		setIfFlagIsSet(&app.opt.BotToken, botTokenFlag)
 		setIfFlagIsSet(&app.opt.CookiesFile, cookiesFileFlag)
 		setIfFlagIsSet(&app.opt.MaxConcurrentDownloads, maxConcurrentDownloadsFlag)
+
+		if app.opt.CookiesFile != "" {
+			// Copy the file with cookies if it is set through environment variables, to
+			// avoid issues with read-only mounted secrets like this one:
+			//
+			// File \"/usr/bin/yt-dlp/__main__.py\", line 17, in <module>;
+			// ...
+			// with open(file, 'w' if write else 'r', encoding='utf-8')
+			// OSError: [Errno 30] Read-only file system: '/cookies.txt'
+			content, rErr := os.ReadFile(app.opt.CookiesFile)
+			if rErr != nil {
+				return fmt.Errorf("failed to read cookies file: %w", rErr)
+			}
+
+			tmpDir, tmpDirErr := os.MkdirTemp("", "cookies-*")
+			if tmpDirErr != nil {
+				return fmt.Errorf("failed to create temporary directory for cookies: %w", tmpDirErr)
+			}
+
+			defer func() { _ = os.RemoveAll(tmpDir) }()
+
+			tmpCookiesFile := filepath.Join(tmpDir, "cookies.txt")
+
+			if err := os.WriteFile(tmpCookiesFile, content, 0o644); err != nil { //nolint:gosec,mnd
+				return err
+			}
+
+			app.opt.CookiesFile = tmpCookiesFile
+		}
 
 		return app.run(ctx, log)
 	}
