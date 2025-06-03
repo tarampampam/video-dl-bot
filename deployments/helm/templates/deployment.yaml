@@ -3,17 +3,17 @@ apiVersion: apps/v1
 kind: Deployment
 
 metadata:
-  name: {{ include "rssbot.fullname" . }}
-  namespace: {{ template "rssbot.namespace" . }}
+  name: {{ include "videoDownloaderBot.fullname" . }}
+  namespace: {{ template "videoDownloaderBot.namespace" . }}
   labels:
-    {{- include "rssbot.commonLabels" . | nindent 4 }}
+    {{- include "videoDownloaderBot.commonLabels" . | nindent 4 }}
 
 spec:
   {{- with .Values.deployment }}
   replicas: 1
   selector:
     matchLabels:
-      {{- include "rssbot.selectorLabels" $ | nindent 6 }}
+      {{- include "videoDownloaderBot.selectorLabels" $ | nindent 6 }}
   template:
     metadata:
       {{- with .podAnnotations }}
@@ -21,7 +21,7 @@ spec:
         {{- tpl (toYaml .) $ | nindent 8 }}
       {{- end }}
       labels:
-        {{- include "rssbot.commonLabels" $ | nindent 8 }}
+        {{- include "videoDownloaderBot.commonLabels" $ | nindent 8 }}
         {{- with .labels }}
         {{- tpl (toYaml .) $ | nindent 8 }}
         {{- end }}
@@ -32,7 +32,7 @@ spec:
         {{- tpl (toYaml .) $ | nindent 8 }}
       {{- end }}
       containers:
-        - name: {{ include "rssbot.fullname" $ }}
+        - name: {{ include "videoDownloaderBot.fullname" $ }}
           {{- with .securityContext }}
           securityContext:
             {{- toYaml . | nindent 12 }}
@@ -41,43 +41,10 @@ spec:
           image: "{{ .repository }}:{{ .tag | default $.Chart.AppVersion }}{{- if .locale}}-{{ .locale }}{{ end }}"
           imagePullPolicy: {{ .pullPolicy | default "IfNotPresent" }}
           {{- end }}
+          {{- with .args }}
           args:
-            {{- with $.Values.config }}
-            {{- if eq .insecure true }}
-            - --insecure
-            {{- end }}
-            {{- if eq .restricted true }}
-            - --restricted
-            {{- end }}
-            {{- range $idx, $_ := .adminIDs }}
-            - --admin
-            - $(ADMIN_ID_{{ $idx}})
-            {{- end }}
-            {{- if .apiUri }}
-            - --api-uri
-            - "{{ .apiUri }}"
-            {{- end }}
-            {{- if .dbFilePath }}
-            - --database
-            - {{ tpl .dbFilePath $ | quote }}
-            {{- end }}
-            {{- if ne .maxFeedSize nil }}
-            - --max-feed-size
-            - "{{ .maxFeedSize }}"
-            {{- end }}
-            {{- if ne .maxInterval nil }}
-            - --max-interval
-            - "{{ .maxInterval }}"
-            {{- end }}
-            {{- if ne .minInterval nil }}
-            - --min-interval
-            - "{{ .minInterval }}"
-            {{- end }}
-            {{- with $.Values.deployment.args }}
             {{- tpl (toYaml .) $ | nindent 12 }}
-            {{- end }}
-            - $(BOT_TOKEN)
-            {{- end }}
+          {{- end }}
           env:
             {{- with $.Values.config.botToken }}
             {{- $botTokenEnvName := "BOT_TOKEN" }}
@@ -101,9 +68,16 @@ spec:
               value: "VALUES ERROR: config.botToken is not set"
             {{- end }}
             {{- end }}
-            {{- range $idx, $adminID := $.Values.config.adminIDs }}
-            - name: "ADMIN_ID_{{ $idx}}"
-              value: {{ tpl $adminID $ | quote }}
+            {{- with $.Values.config }}
+            {{- if .log.level }}
+            - {name: LOG_LEVEL, value: "{{ .log.level }}"}
+            {{- end }}
+            {{- if .log.format }}
+            - {name: LOG_FORMAT, value: "{{ .log.format }}"}
+            {{- end }}
+            {{- if .maxConcurrentDownloads }}
+            - {name: MAX_CONCURRENT_DOWNLOADS, value: "{{ .maxConcurrentDownloads }}"}
+            {{- end }}
             {{- end }}
             {{- with $.Values.deployment.env }}
             {{- tpl (toYaml .) $ | nindent 12 }}

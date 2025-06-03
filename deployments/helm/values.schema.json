@@ -162,6 +162,22 @@
     "config": {
       "type": "object",
       "properties": {
+        "log": {
+          "properties": {
+            "level": {
+              "oneOf": [
+                {"type": "string", "enum": ["debug", "info", "warn", "error"]},
+                {"type": "null"}
+              ]
+            },
+            "format": {
+              "oneOf": [
+                {"type": "string", "enum": ["console", "json"]},
+                {"type": "null"}
+              ]
+            }
+          }
+        },
         "botToken": {
           "type": "object",
           "properties": {

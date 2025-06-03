@@ -117,4 +117,10 @@ USER 10001:10001
 
 WORKDIR /tmp
 
+ENV \
+  # logging format
+  LOG_FORMAT=json \
+  # logging level
+  LOG_LEVEL=info
+
 ENTRYPOINT ["/bin/video-dl-bot"]

@@ -3,10 +3,13 @@ package cli
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"regexp"
+	"strings"
 
 	"gh.tarampamp.am/video-dl-bot/internal/bot"
 	"gh.tarampamp.am/video-dl-bot/internal/cli/cmd"
+	"gh.tarampamp.am/video-dl-bot/internal/logger"
 	"gh.tarampamp.am/video-dl-bot/internal/version"
 )
 
@@ -36,7 +39,33 @@ func NewApp(name string) *App { //nolint:funlen
 
 	// define CLI flags with validation
 	var (
-		botToken = cmd.Flag[string]{
+		logLevelFlag = cmd.Flag[string]{
+			Names:   []string{"log-level"},
+			Usage:   "Logging level (" + strings.Join(logger.LevelStrings(), "/") + ")",
+			EnvVars: []string{"LOG_LEVEL"},
+			Default: logger.InfoLevel.String(),
+			Validator: func(_ *cmd.Command, v string) error {
+				if _, err := logger.ParseLevel(v); err != nil {
+					return fmt.Errorf("invalid log level: %w", err)
+				}
+
+				return nil
+			},
+		}
+		logFormatFlag = cmd.Flag[string]{
+			Names:   []string{"log-format"},
+			Usage:   "Logging format (" + strings.Join(logger.FormatStrings(), "/") + ")",
+			EnvVars: []string{"LOG_FORMAT"},
+			Default: logger.ConsoleFormat.String(),
+			Validator: func(_ *cmd.Command, v string) error {
+				if _, err := logger.ParseFormat(v); err != nil {
+					return fmt.Errorf("invalid log format: %w", err)
+				}
+
+				return nil
+			},
+		}
+		botTokenFlag = cmd.Flag[string]{
 			Names:   []string{"bot-token", "t"},
 			Usage:   "Telegram bot token",
 			EnvVars: []string{"BOT_TOKEN"},
@@ -57,8 +86,7 @@ func NewApp(name string) *App { //nolint:funlen
 				return nil
 			},
 		}
-
-		maxConcurrentDownloads = cmd.Flag[uint]{
+		maxConcurrentDownloadsFlag = cmd.Flag[uint]{
 			Names:   []string{"max-concurrent-downloads", "m"},
 			Usage:   "Maximum number of concurrent downloads",
 			EnvVars: []string{"MAX_CONCURRENT_DOWNLOADS"},
@@ -74,16 +102,28 @@ func NewApp(name string) *App { //nolint:funlen
 	)
 
 	app.cmd.Flags = []cmd.Flagger{
-		&botToken,
-		&maxConcurrentDownloads,
+		&logLevelFlag,
+		&logFormatFlag,
+		&botTokenFlag,
+		&maxConcurrentDownloadsFlag,
 	}
 
 	// define main command action
 	app.cmd.Action = func(ctx context.Context, c *cmd.Command, args []string) error {
-		setIfFlagIsSet(&app.opt.BotToken, botToken)
-		setIfFlagIsSet(&app.opt.MaxConcurrentDownloads, maxConcurrentDownloads)
+		var (
+			logLevel, _  = logger.ParseLevel(*logLevelFlag.Value)   // error ignored because the flag validates itself
+			logFormat, _ = logger.ParseFormat(*logFormatFlag.Value) // --//--
+		)
 
-		return app.run(ctx)
+		log, logErr := logger.New(logLevel, logFormat) // create new logger instance
+		if logErr != nil {
+			return logErr
+		}
+
+		setIfFlagIsSet(&app.opt.BotToken, botTokenFlag)
+		setIfFlagIsSet(&app.opt.MaxConcurrentDownloads, maxConcurrentDownloadsFlag)
+
+		return app.run(ctx, log)
 	}
 
 	return &app
@@ -105,8 +145,8 @@ func (a *App) Run(ctx context.Context, args []string) error { return a.cmd.Run(c
 func (a *App) Help() string { return a.cmd.Help() }
 
 // run contains the main bot initialization and event loop.
-func (a *App) run(ctx context.Context) error {
-	b, err := bot.NewBot(ctx, a.opt.BotToken, a.opt.MaxConcurrentDownloads)
+func (a *App) run(ctx context.Context, log *slog.Logger) error {
+	b, err := bot.NewBot(ctx, log.With("source", "telebot"), a.opt.BotToken, a.opt.MaxConcurrentDownloads)
 	if err != nil {
 		return fmt.Errorf("failed to create bot: %w", err)
 	}

@@ -14,6 +14,8 @@ Version:
    0.0.0@undefined
 
 Options:
+   --log-level="…"                         Logging level (debug/info/warn/error) (default: info) [$LOG_LEVEL]
+   --log-format="…"                        Logging format (console/json) (default: console) [$LOG_FORMAT]
    --bot-token="…", -t="…"                 Telegram bot token [$BOT_TOKEN]
    --max-concurrent-downloads="…", -m="…"  Maximum number of concurrent downloads (default: 5) [$MAX_CONCURRENT_DOWNLOADS]
    --help, -h                              Show help

@@ -3,6 +3,7 @@ package bot
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"time"
@@ -14,7 +15,10 @@ import (
 )
 
 // Bot wraps the Telegram bot client.
-type Bot struct{ client *tele.Bot }
+type Bot struct {
+	log    *slog.Logger
+	client *tele.Bot
+}
 
 // Emojis used for user interaction feedback.
 const (
@@ -30,19 +34,27 @@ const (
 )
 
 // NewBot creates and returns a new instance of Bot.
-func NewBot(ctx context.Context, token string, maxConcurrentDownloads uint) (*Bot, error) {
+func NewBot(ctx context.Context, log *slog.Logger, token string, maxConcurrentDownloads uint) (*Bot, error) {
 	const pollerTimeout = 10 * time.Second // default timeout for the long poller
 
 	client, err := tele.NewBot(tele.Settings{
 		Token:  token,
 		Poller: &tele.LongPoller{Timeout: pollerTimeout},
+		OnError: func(err error, c tele.Context) {
+			log.Error(
+				"telegram client error",
+				slog.String("error", err.Error()),
+				slog.String("sender_name", c.Sender().FirstName),
+				slog.String("sender_id", fmt.Sprintf("%d", c.Sender().ID)),
+			)
+		},
 	})
 	if err != nil {
 		return nil, err
 	}
 
 	var (
-		bot = Bot{client: client}
+		bot = Bot{log: log, client: client}
 		lim = make(Limiter, maxConcurrentDownloads)
 	)
 
@@ -125,11 +137,10 @@ func (b *Bot) handleMessages(pCtx context.Context, lim Limiter) tele.HandlerFunc
 		if userUrlErr != nil {
 			_ = b.react(user, userMsg, false, emojiBadRequest)
 
-			fmt.Printf( //nolint:forbidigo // TODO: implement a proper logger
-				"A shitty request from user %s (id:%d): %s\n",
-				user.FirstName,
-				user.ID,
-				c.Text(),
+			b.log.Info("received invalid link from user",
+				slog.String("sender_name", user.FirstName),
+				slog.Int64("sender_id", user.ID),
+				slog.String("message_text", c.Text()),
 			)
 
 			return b.reply(userMsg, errWrongMessageReplyMd2, &tele.SendOptions{
@@ -140,11 +151,10 @@ func (b *Bot) handleMessages(pCtx context.Context, lim Limiter) tele.HandlerFunc
 			})
 		}
 
-		fmt.Printf( //nolint:forbidigo // TODO: implement a proper logger
-			"Video downloading request from user %s (id:%d), url: %s\n",
-			user.FirstName,
-			user.ID,
-			userUrl.String(),
+		b.log.Info("received video download request",
+			slog.String("sender_name", user.FirstName),
+			slog.Int64("sender_id", user.ID),
+			slog.String("video_url", userUrl.String()),
 		)
 
 		// limit concurrent downloads via semaphore
@@ -165,7 +175,12 @@ func (b *Bot) handleMessages(pCtx context.Context, lim Limiter) tele.HandlerFunc
 		// download the video
 		dl, dlErr := ytdlp.Download(ctx, userUrl.String())
 		if dlErr != nil {
-			fmt.Printf("Failed to download video: %s\n", dlErr.Error()) //nolint:forbidigo // TODO: implement a proper logger
+			b.log.Error("failed to download video",
+				slog.String("error", dlErr.Error()),
+				slog.String("sender_name", user.FirstName),
+				slog.Int64("sender_id", user.ID),
+				slog.String("video_url", userUrl.String()),
+			)
 
 			return b.reply(userMsg, "❌ Failed to download video")
 		}
@@ -175,10 +190,24 @@ func (b *Bot) handleMessages(pCtx context.Context, lim Limiter) tele.HandlerFunc
 		// stat the file to get size info
 		stat, statErr := os.Stat(dl.Filepath)
 		if statErr != nil {
-			fmt.Printf("Failed to stat downloaded video file: %s\n", statErr.Error()) //nolint:forbidigo,lll // TODO: implement a proper logger
+			b.log.Error("failed to stat downloaded video file",
+				slog.String("error", statErr.Error()),
+				slog.String("file_path", dl.Filepath),
+				slog.String("sender_name", user.FirstName),
+				slog.Int64("sender_id", user.ID),
+				slog.String("video_url", userUrl.String()),
+			)
 
 			return b.reply(userMsg, "❌ Downloaded video file not available")
 		}
+
+		b.log.Debug("successfully downloaded video",
+			slog.String("file_path", dl.Filepath),
+			slog.String("sender_name", user.FirstName),
+			slog.Int64("sender_id", user.ID),
+			slog.String("video_url", userUrl.String()),
+			slog.Int64("file_size", stat.Size()),
+		)
 
 		defer func() { _ = os.Remove(dl.Filepath) }() // clean up the downloaded file after sending
 
@@ -199,7 +228,13 @@ func (b *Bot) handleMessages(pCtx context.Context, lim Limiter) tele.HandlerFunc
 		// telegram upload limit is 50MB
 		if stat.Size() <= 50*1024*1024 {
 			if err := b.replyWithVideo(userMsg, tele.Video{File: tele.FromReader(fp)}); err != nil {
-				fmt.Printf("Failed to send video: %s\n", err.Error()) //nolint:forbidigo // TODO: implement a proper logger
+				b.log.Error("failed to upload video to Telegram",
+					slog.String("error", err.Error()),
+					slog.Int64("file_size", stat.Size()),
+					slog.String("sender_name", user.FirstName),
+					slog.Int64("sender_id", user.ID),
+					slog.String("video_url", userUrl.String()),
+				)
 
 				return b.reply(userMsg, fmt.Sprintf(
 					"❌ Failed to send video (%d Mb): %s",
@@ -211,7 +246,13 @@ func (b *Bot) handleMessages(pCtx context.Context, lim Limiter) tele.HandlerFunc
 			// upload to file hosting if file is too large
 			fileUrl, urlErr := filestorage.UploadToFileBin(ctx, fp, fmt.Sprintf("video%s", filepath.Ext(dl.Filepath)))
 			if urlErr != nil {
-				fmt.Printf("Failed to upload video file: %s\n", urlErr.Error()) //nolint:forbidigo,lll // TODO: implement a proper logger
+				b.log.Error("failed to upload video file to file hosting",
+					slog.String("error", urlErr.Error()),
+					slog.Int64("file_size", stat.Size()),
+					slog.String("sender_name", user.FirstName),
+					slog.Int64("sender_id", user.ID),
+					slog.String("video_url", userUrl.String()),
+				)
 
 				return b.reply(userMsg, "❌ Failed to upload video to file hosting")
 			}

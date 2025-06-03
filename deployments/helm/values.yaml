@@ -55,6 +55,14 @@ deployment:
   args: [] # supports templating
 
 config:
+  log:
+    # -- Logging level (debug|info|warn|error)
+    # @default info (defined in the Dockerfile)
+    level: null
+    # -- Logging format (console|json)
+    # @default json (defined in the Dockerfile)
+    format: null
+
   botToken:
     # -- Telegram bot token, provided as a plain value
     plain: null # supports templating
@@ -68,6 +76,7 @@ config:
       enabled: false
       configMapName: null # supports templating
       configMapKey: null  # supports templating
+
   # -- Maximum number of concurrent downloads
   # @default 5
   maxConcurrentDownloads: null
