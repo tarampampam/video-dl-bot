@@ -1,0 +1,13 @@
+# yaml-language-server: $schema=https://json.schemastore.org/chart.json
+
+apiVersion: v2
+name: video-dl-bot
+description: Telegram bot for downloading videos
+
+type: application
+version: 0.0.0 # will be replaced by the release workflow
+appVersion: 0.0.0 # will be replaced by the release workflow
+icon: https://habrastorage.org/webt/br/yj/na/bryjnah7fo3v1llg_aha02e25es.png
+home: https://github.com/tarampampam/video-dl-bot
+sources: [https://github.com/tarampampam/video-dl-bot]
+keywords: [telegram, yt-dlp, bot, video]

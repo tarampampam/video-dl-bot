@@ -1,4 +1,4 @@
-# Video Download Bot
+# Video Downloader Bot
 
 <!--GENERATED:APP_README-->
 ## 💻 Command line interface
@@ -14,7 +14,9 @@ Version:
    0.0.0@undefined
 
 Options:
-   --help, -h     Show help
-   --version, -v  Print the version
+   --bot-token="…", -t="…"                 Telegram bot token [$BOT_TOKEN]
+   --max-concurrent-downloads="…", -m="…"  Maximum number of concurrent downloads (default: 5) [$MAX_CONCURRENT_DOWNLOADS]
+   --help, -h                              Show help
+   --version, -v                           Print the version
 ```
 <!--/GENERATED:APP_README-->

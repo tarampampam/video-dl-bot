@@ -1,0 +1,198 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "fullnameOverride": {
+      "oneOf": [
+        {"type": "string", "minLength": 1},
+        {"type": "null"}
+      ]
+    },
+    "nameOverride": {
+      "oneOf": [
+        {"type": "string", "minLength": 1},
+        {"type": "null"}
+      ]
+    },
+    "namespaceOverride": {
+      "oneOf": [
+        {"type": "string", "minLength": 1},
+        {"type": "null"}
+      ]
+    },
+    "image": {
+      "type": "object",
+      "properties": {
+        "repository": {"type": "string", "minLength": 1},
+        "pullPolicy": {
+          "oneOf": [
+            {"type": "string", "enum": ["Always", "IfNotPresent", "Never"]},
+            {"type": "null"}
+          ]
+        },
+        "tag": {
+          "oneOf": [
+            {"type": "string", "minLength": 1},
+            {"type": "null"}
+          ]
+        }
+      }
+    },
+    "deployment": {
+      "type": "object",
+      "properties": {
+        "enabled": {"type": "boolean"},
+        "podAnnotations": {
+          "type": "object",
+          "additionalProperties": {"type": "string", "minLength": 1}
+        },
+        "labels": {
+          "type": "object",
+          "additionalProperties": {"type": "string", "minLength": 1}
+        },
+        "imagePullSecrets": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {"type": "string"}
+            },
+            "minProperties": 1
+          }
+        },
+        "securityContext": {
+          "type": "object",
+          "properties": {
+            "runAsNonRoot": {"type": "boolean"},
+            "runAsUser": {"type": "integer"},
+            "runAsGroup": {"type": "integer"},
+            "readOnlyRootFilesystem": {"type": "boolean"}
+          }
+        },
+        "resources": {
+          "type": "object",
+          "properties": {
+            "requests": {
+              "type": "object",
+              "properties": {
+                "cpu": {"type": "string"},
+                "memory": {"type": "string"}
+              }
+            },
+            "limits": {
+              "type": "object",
+              "properties": {
+                "cpu": {"type": "string"},
+                "memory": {"type": "string"}
+              }
+            }
+          }
+        },
+        "volumes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {"type": "string"},
+              "persistentVolumeClaim": {
+                "type": "object",
+                "properties": {
+                  "claimName": {"type": "string"}
+                }
+              }
+            }
+          }
+        },
+        "volumeMounts": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {"type": "string"},
+              "mountPath": {"type": "string"},
+              "subPath": {"type": "string"},
+              "readOnly": {"type": "boolean"}
+            }
+          }
+        },
+        "nodeSelector": {
+          "type": "object",
+          "additionalProperties": {"type": "string", "minLength": 1}
+        },
+        "affinity": {
+          "type": "object",
+          "properties": {
+            "nodeAffinity": {"type": "object"},
+            "podAffinity": {"type": "object"},
+            "podAntiAffinity": {"type": "object"}
+          }
+        },
+        "tolerations": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "key": {"type": "string"},
+              "operator": {"type": "string"},
+              "value": {"type": "string"},
+              "effect": {"type": "string"}
+            }
+          }
+        },
+        "env": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {"type": "string"},
+              "value": {"type": "string"},
+              "valueFrom": {"type": "object"}
+            }
+          }
+        },
+        "args": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "config": {
+      "type": "object",
+      "properties": {
+        "botToken": {
+          "type": "object",
+          "properties": {
+            "plain": {
+              "oneOf": [
+                {"type": "string", "minLength": 3},
+                {"type": "null"}
+              ]
+            },
+            "fromSecret": {
+              "type": "object",
+              "properties": {
+                "enabled": {"type": "boolean"},
+                "secretName": {"oneOf": [{"type": "string", "minLength": 1}, {"type": "null"}]},
+                "secretKey": {"oneOf": [{"type": "string", "minLength": 1}, {"type": "null"}]}
+              }
+            },
+            "fromConfigMap": {
+              "type": "object",
+              "properties": {
+                "enabled": {"type": "boolean"},
+                "configMapName": {"oneOf": [{"type": "string", "minLength": 1}, {"type": "null"}]},
+                "configMapKey": {"oneOf": [{"type": "string", "minLength": 1}, {"type": "null"}]}
+              }
+            }
+          }
+        },
+        "maxConcurrentDownloads": {
+          "oneOf": [{"type": "integer", "minimum": 1, "maximum": 100}, {"type": "null"}]
+        }
+      }
+    }
+  }
+}

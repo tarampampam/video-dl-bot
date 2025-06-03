@@ -51,6 +51,13 @@ ENV \
   # set path to the Go cache (think about this as a "object files cache")
   GOCACHE="/var/tmp/go/cache"
 
+RUN set +x \
+    # precompile the standard library
+    && go build std \
+    # allow anyone to read/write the Go cache
+    && find /var/tmp/go -type d -exec chmod 0777 {} + \
+    && find /var/tmp/go -type f -exec chmod 0666 {} +
+
 RUN set -x \
     # ensure everything is installed correctly
     && go version \
@@ -99,5 +106,15 @@ LABEL \
 COPY --from=ffmpeg /bin/ffmpeg /bin/ffprobe /bin/
 COPY --from=yt-dlp /bin/yt-dlp /bin/yt-dlp
 COPY --from=compiler /src/video-dl-bot /bin/video-dl-bot
+
+# prepare the rootfs for scratch
+RUN set -x \
+    && echo 'video-dl-bot:x:10001:10001::/tmp:/sbin/nologin' >> /etc/passwd \
+    && echo 'video-dl-bot:x:10001:' >> /etc/group
+
+# use an unprivileged user
+USER 10001:10001
+
+WORKDIR /tmp
 
 ENTRYPOINT ["/bin/video-dl-bot"]

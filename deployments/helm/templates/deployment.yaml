@@ -1,0 +1,142 @@
+{{- if .Values.deployment.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+
+metadata:
+  name: {{ include "rssbot.fullname" . }}
+  namespace: {{ template "rssbot.namespace" . }}
+  labels:
+    {{- include "rssbot.commonLabels" . | nindent 4 }}
+
+spec:
+  {{- with .Values.deployment }}
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "rssbot.selectorLabels" $ | nindent 6 }}
+  template:
+    metadata:
+      {{- with .podAnnotations }}
+      annotations:
+        {{- tpl (toYaml .) $ | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "rssbot.commonLabels" $ | nindent 8 }}
+        {{- with .labels }}
+        {{- tpl (toYaml .) $ | nindent 8 }}
+        {{- end }}
+    spec:
+      automountServiceAccountToken: false
+      {{- with .imagePullSecrets }}
+      imagePullSecrets:
+        {{- tpl (toYaml .) $ | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: {{ include "rssbot.fullname" $ }}
+          {{- with .securityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with $.Values.image }}
+          image: "{{ .repository }}:{{ .tag | default $.Chart.AppVersion }}{{- if .locale}}-{{ .locale }}{{ end }}"
+          imagePullPolicy: {{ .pullPolicy | default "IfNotPresent" }}
+          {{- end }}
+          args:
+            {{- with $.Values.config }}
+            {{- if eq .insecure true }}
+            - --insecure
+            {{- end }}
+            {{- if eq .restricted true }}
+            - --restricted
+            {{- end }}
+            {{- range $idx, $_ := .adminIDs }}
+            - --admin
+            - $(ADMIN_ID_{{ $idx}})
+            {{- end }}
+            {{- if .apiUri }}
+            - --api-uri
+            - "{{ .apiUri }}"
+            {{- end }}
+            {{- if .dbFilePath }}
+            - --database
+            - {{ tpl .dbFilePath $ | quote }}
+            {{- end }}
+            {{- if ne .maxFeedSize nil }}
+            - --max-feed-size
+            - "{{ .maxFeedSize }}"
+            {{- end }}
+            {{- if ne .maxInterval nil }}
+            - --max-interval
+            - "{{ .maxInterval }}"
+            {{- end }}
+            {{- if ne .minInterval nil }}
+            - --min-interval
+            - "{{ .minInterval }}"
+            {{- end }}
+            {{- with $.Values.deployment.args }}
+            {{- tpl (toYaml .) $ | nindent 12 }}
+            {{- end }}
+            - $(BOT_TOKEN)
+            {{- end }}
+          env:
+            {{- with $.Values.config.botToken }}
+            {{- $botTokenEnvName := "BOT_TOKEN" }}
+            {{- if .plain }}
+            - name: "{{ $botTokenEnvName }}"
+              value: {{ tpl .plain $ | quote }}
+            {{- else if .fromSecret.enabled }}
+            - name: "{{ $botTokenEnvName }}"
+              valueFrom:
+                secretKeyRef:
+                  name: {{ tpl .fromSecret.secretName $ | quote }}
+                  key: {{ tpl .fromSecret.secretKey $ | quote }}
+            {{- else if .fromConfigMap.enabled }}
+            - name: "{{ $botTokenEnvName }}"
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ tpl .fromConfigMap.configMapName $ | quote }}
+                  key: {{ tpl .fromConfigMap.configMapKey $ | quote }}
+            {{- else }}
+            - name: "{{ $botTokenEnvName }}"
+              value: "VALUES ERROR: config.botToken is not set"
+            {{- end }}
+            {{- end }}
+            {{- range $idx, $adminID := $.Values.config.adminIDs }}
+            - name: "ADMIN_ID_{{ $idx}}"
+              value: {{ tpl $adminID $ | quote }}
+            {{- end }}
+            {{- with $.Values.deployment.env }}
+            {{- tpl (toYaml .) $ | nindent 12 }}
+            {{- end }}
+
+          {{- with .resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+
+          {{- with .volumeMounts }}
+          volumeMounts:
+            {{- tpl (toYaml .) $ | nindent 12 }}
+          {{- end }}
+
+      {{- with .volumes }}
+      volumes:
+        {{- tpl (toYaml .) $ | nindent 8 }}
+      {{- end }}
+
+      {{- with .nodeSelector }}
+      nodeSelector:
+        {{- tpl (toYaml .) $ | nindent 8 }}
+      {{- end }}
+
+      {{- with .affinity }}
+      affinity:
+        {{- tpl (toYaml .) $ | nindent 8 }}
+      {{- end }}
+
+      {{- with .tolerations }}
+      tolerations:
+        {{- tpl (toYaml .) $ | nindent 8 }}
+      {{- end }}
+  {{- end }}
+{{- end }}

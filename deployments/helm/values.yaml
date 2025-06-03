@@ -1,0 +1,73 @@
+# -- The name of the Helm release
+fullnameOverride: null
+# -- This is to override the chart name
+nameOverride: null
+# -- Override the default Release Namespace for Helm
+namespaceOverride: null
+
+image:
+  # -- The image repository to pull from
+  repository: ghcr.io/tarampampam/video-dl-bot
+  # -- Defines the image pull policy
+  pullPolicy: IfNotPresent
+  # -- Overrides the image tag whose default is the chart appVersion
+  tag: null
+
+deployment:
+  # -- Enable deployment
+  enabled: true
+  # -- Additional pod annotations (e.g. for mesh injection or prometheus scraping)
+  #    It supports templating. One can set it with values like some/name: '{{ template "some.name" . }}'
+  #    For more information checkout: https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/
+  podAnnotations: {} # supports templating
+  # -- Additional deployment labels (e.g. for filtering deployment by custom labels)
+  labels: {} # supports templating
+  # -- This is for the secretes for pulling an image from a private repository more information can be found
+  #    here: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
+  imagePullSecrets: [] # supports templating
+  # -- Security context for the pod, more information can be found here:
+  #    https://kubernetes.io/docs/reference/kubernetes-api/workload-resources/pod-v1/#security-context-1
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 10001  # as defined in the Dockerfile
+    runAsGroup: 10001 # as defined in the Dockerfile
+    readOnlyRootFilesystem: false # when you mount a volume, you can set this to true
+  resources:
+    requests: {memory: 16Mi}
+    limits: {memory: 64Mi}
+  # -- Additional volumes to add to the pod, more information can be found here:
+  #    https://kubernetes.io/docs/concepts/storage/volumes/
+  volumes: [] # supports templating
+  # -- Additional volumeMounts to add to the container (for instance when using fs storage driver)
+  volumeMounts: [] # supports templating
+  # -- Node selector for pod assignment, more information can be found here:
+  #    https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/
+  nodeSelector: {} # supports templating
+  # -- Affinity for pod assignment, more information can be found here:
+  #    https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/
+  affinity: {} # supports templating
+  # -- Tolerations for pod assignment, more information can be found here:
+  #    https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/
+  tolerations: [] # supports templating
+  # -- The list of additional environment variables to set in the container
+  env: [] # supports templating
+  # -- The list of additional arguments to pass to the container
+  args: [] # supports templating
+
+config:
+  botToken:
+    # -- Telegram bot token, provided as a plain value
+    plain: null # supports templating
+    fromSecret:
+      # -- Enable getting the token from a secret
+      enabled: false
+      secretName: null # supports templating
+      secretKey: null  # supports templating
+    fromConfigMap:
+      # -- Enable getting the token from a config map
+      enabled: false
+      configMapName: null # supports templating
+      configMapKey: null  # supports templating
+  # -- Maximum number of concurrent downloads
+  # @default 5
+  maxConcurrentDownloads: null

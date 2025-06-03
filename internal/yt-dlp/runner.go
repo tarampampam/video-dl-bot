@@ -51,7 +51,7 @@ func (r systemRunner) Run(ctx context.Context, exe string, args ...string) (*Run
 			return nil, fmt.Errorf(
 				"%w: %s", // wrap the original error with stderr output
 				err,
-				strings.Join(strings.Split(stderr.String(), "\n"), "; "), // flatten multiline stderr
+				strings.Trim(strings.Join(strings.Split(stderr.String(), "\n"), "; "), "; "), // flatten multiline stderr
 			)
 		}
 
