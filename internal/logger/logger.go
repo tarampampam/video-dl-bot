@@ -8,11 +8,14 @@ import (
 
 // New creates a new slog.Logger based on the level and format.
 func New(l Level, f Format) (*slog.Logger, error) {
-	var handler slog.Handler
-	var opts slog.HandlerOptions
+	var (
+		handler slog.Handler
+		opts    slog.HandlerOptions
+	)
 
 	// Map custom level to slog.Level
 	var slogLevel slog.Level
+
 	switch l {
 	case DebugLevel:
 		slogLevel = slog.LevelDebug

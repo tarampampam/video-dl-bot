@@ -85,6 +85,6 @@ func TestLevels(t *testing.T) {
 
 func TestLevelStrings(t *testing.T) {
 	t.Parallel()
-	
+
 	assertSlicesEqual(t, []string{"debug", "info", "warn", "error"}, logger.LevelStrings())
 }
