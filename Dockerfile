@@ -61,11 +61,12 @@ RUN set -x \
     && mv /src/video-dl-bot ./bin/video-dl-bot
 
 # -✂- and this is the final stage -------------------------------------------------------------------------------------
-FROM docker.io/library/python:3.13-alpine AS runtime
+FROM docker.io/library/python:3.13-slim AS runtime
 
 COPY --from=ffmpeg /bin/ffmpeg /bin/ffprobe /bin/
 COPY --from=yt-dlp /bin/yt-dlp /bin/yt-dlp
-COPY --from=compiler /tmp/rootfs /
+COPY --from=compiler /tmp/rootfs/bin/video-dl-bot /bin/video-dl-bot
+COPY --from=compiler /tmp/rootfs/etc/passwd /tmp/rootfs/etc/group /etc/
 
 ARG APP_VERSION="undefined@docker"
 

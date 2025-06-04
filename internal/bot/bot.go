@@ -256,8 +256,10 @@ func (b *Bot) handleMessages(pCtx context.Context, lim Limiter) tele.HandlerFunc
 
 		defer stopUploadingAction()
 
+		var fileSizeMb = float64(stat.Size()) / 1024 / 1024 // file size in MB
+
 		// telegram upload limit is 50MB
-		if stat.Size() <= 50*1024*1024 {
+		if fileSizeMb <= 50 { //nolint:mnd
 			if err := b.replyWithVideo(userMsg, tele.Video{File: tele.FromReader(fp)}); err != nil {
 				b.log.Error("failed to upload video to Telegram",
 					slog.String("error", err.Error()),
@@ -268,8 +270,8 @@ func (b *Bot) handleMessages(pCtx context.Context, lim Limiter) tele.HandlerFunc
 				)
 
 				return b.reply(userMsg, fmt.Sprintf(
-					"❌ Failed to send video (%d Mb): %s",
-					stat.Size()/1024/1024, //nolint:mnd
+					"❌ Failed to send video (%.2f MB): %s",
+					fileSizeMb,
 					err.Error(),
 				))
 			}
@@ -290,8 +292,11 @@ func (b *Bot) handleMessages(pCtx context.Context, lim Limiter) tele.HandlerFunc
 
 			return b.replyWithLink(
 				userMsg,
-				fmt.Sprintf("[Your video](%s) is ready for download:", userUrl.String()),
-				"🚀 Download video (this link will expire in a couple of days)",
+				fmt.Sprintf(
+					"[Your video](%s) is ready for download _\\(the link will expire in a couple of days\\)_:",
+					userUrl.String(),
+				),
+				fmt.Sprintf("🚀 Download video (%.2f MB)", fileSizeMb),
 				fileUrl,
 				&tele.SendOptions{
 					ParseMode:             tele.ModeMarkdownV2,
