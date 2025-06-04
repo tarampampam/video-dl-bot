@@ -45,6 +45,14 @@ spec:
           args:
             {{- tpl (toYaml .) $ | nindent 12 }}
           {{- end }}
+          {{- with .livenessProbe }}
+          livenessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .readinessProbe }}
+          readinessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
           env:
             {{- with $.Values.config.botToken }}
             {{- $botTokenEnvName := "BOT_TOKEN" }}
@@ -77,6 +85,9 @@ spec:
             {{- end }}
             {{- if .log.format }}
             - {name: LOG_FORMAT, value: "{{ .log.format }}"}
+            {{- end }}
+            {{- if .pidFile }}
+            - {name: PID_FILE, value: "{{ .pidFile }}"}
             {{- end }}
             {{- if .maxConcurrentDownloads }}
             - {name: MAX_CONCURRENT_DOWNLOADS, value: "{{ .maxConcurrentDownloads }}"}

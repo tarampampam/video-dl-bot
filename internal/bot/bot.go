@@ -119,7 +119,7 @@ func (b *Bot) Start(ctx context.Context) {
 // handleStartCommand returns a handler for the "/start" command.
 func (b *Bot) handleStartCommand() tele.HandlerFunc {
 	return func(c tele.Context) (err error) {
-		return b.reply(c.Message(), fmt.Sprintf(`Hello %s! I can help you download videos from thousands of websites.
+		return b.reply(c.Message(), fmt.Sprintf(`Hello %s! I can help you download videos from hundreds of websites.
 
 Please send or forward me a video URL, and I'll do my best to download it for you!`,
 			c.Sender().FirstName,
@@ -148,7 +148,7 @@ func (b *Bot) handleMessages(pCtx context.Context, lim Limiter) tele.HandlerFunc
 		"\\- `youtu\\.be/dQw4w9WgXcQ`\n" +
 		"\n" +
 		"You can also share a link to an Instagram reel, TikTok video, or any other video you'd like to download\\. " +
-		"Thousands of sites are supported, so feel free to give it a try\\!"
+		"Hundreds of sites are supported, so feel free to give it a try\\!"
 
 	return func(c tele.Context) error {
 		ctx, cancel := context.WithCancel(pCtx)
@@ -161,7 +161,7 @@ func (b *Bot) handleMessages(pCtx context.Context, lim Limiter) tele.HandlerFunc
 
 		// invalid link - inform user and react
 		if userUrlErr != nil {
-			_ = b.react(user, userMsg, false, emojiBadRequest)
+			_ = b.react(user, userMsg, emojiBadRequest)
 
 			b.log.Info("received invalid link from user",
 				slog.String("sender_name", user.FirstName),
@@ -173,7 +173,6 @@ func (b *Bot) handleMessages(pCtx context.Context, lim Limiter) tele.HandlerFunc
 				ParseMode:             tele.ModeMarkdownV2,
 				DisableWebPagePreview: true,
 				DisableNotification:   true,
-				Protected:             true,
 			})
 		}
 
@@ -193,7 +192,7 @@ func (b *Bot) handleMessages(pCtx context.Context, lim Limiter) tele.HandlerFunc
 		defer func() { _ = b.clearReactions(user, userMsg) }()
 
 		// indicate download in progress
-		_ = b.react(user, userMsg, true, emojiDownloading)
+		_ = b.react(user, userMsg, emojiDownloading)
 		stopDownloadingAction := b.setChatAction(ctx, user, actDownloading)
 
 		defer stopDownloadingAction()
@@ -252,7 +251,7 @@ func (b *Bot) handleMessages(pCtx context.Context, lim Limiter) tele.HandlerFunc
 		defer func() { _ = fp.Close() }()
 
 		// indicate upload in progress
-		_ = b.react(user, userMsg, true, emojiUploading)
+		_ = b.react(user, userMsg, emojiUploading)
 		stopUploadingAction := b.setChatAction(ctx, user, actUploading)
 
 		defer stopUploadingAction()
@@ -348,7 +347,7 @@ func (b *Bot) replyWithLink(to *tele.Message, msgText, linkText, linkUrl string,
 }
 
 // react adds emoji reactions to a message.
-func (b *Bot) react(to tele.Recipient, msg tele.Editable, big bool, emoji ...string) error {
+func (b *Bot) react(to tele.Recipient, msg tele.Editable, emoji ...string) error {
 	var reactions = make([]tele.Reaction, len(emoji))
 
 	for i, e := range emoji {
@@ -358,7 +357,7 @@ func (b *Bot) react(to tele.Recipient, msg tele.Editable, big bool, emoji ...str
 		}
 	}
 
-	return b.client.React(to, msg, tele.Reactions{Reactions: reactions, Big: big})
+	return b.client.React(to, msg, tele.Reactions{Reactions: reactions})
 }
 
 // clearReactions removes all reactions from a message.

@@ -2,12 +2,15 @@ package cli
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"os"
 	"path/filepath"
 	"regexp"
+	"strconv"
 	"strings"
+	"syscall"
 
 	"gh.tarampamp.am/video-dl-bot/internal/bot"
 	"gh.tarampamp.am/video-dl-bot/internal/cli/cmd"
@@ -21,6 +24,9 @@ import (
 type App struct {
 	cmd cmd.Command
 	opt struct {
+		PidFile       string
+		DoHealthcheck bool
+
 		BotToken               string
 		CookiesFile            string
 		MaxConcurrentDownloads uint
@@ -119,6 +125,29 @@ func NewApp(name string) *App { //nolint:funlen,gocognit,gocyclo
 				return nil
 			},
 		}
+		pidFileFlag = cmd.Flag[string]{
+			Names:   []string{"pid-file"},
+			Usage:   "Path to the file where the process ID will be stored",
+			EnvVars: []string{"PID_FILE"},
+			Default: app.opt.PidFile,
+			Validator: func(_ *cmd.Command, _ string) error {
+				if app.opt.PidFile == "" {
+					return nil
+				}
+
+				if _, err := os.Stat(app.opt.PidFile); err != nil {
+					if os.IsNotExist(err) {
+						return nil // it's okay - file shouldn't exist before the bot starts
+					}
+				}
+
+				return errors.New("pid file path already exists (another instance may be running), or the path is invalid")
+			},
+		}
+		healthcheckFlag = cmd.Flag[bool]{
+			Names: []string{"healthcheck"},
+			Usage: "Check the health of the bot (useful for Docker/K8s healthcheck; pid file must be set) and exit",
+		}
 	)
 
 	app.cmd.Flags = []cmd.Flagger{
@@ -127,6 +156,8 @@ func NewApp(name string) *App { //nolint:funlen,gocognit,gocyclo
 		&botTokenFlag,
 		&cookiesFileFlag,
 		&maxConcurrentDownloadsFlag,
+		&pidFileFlag,
+		&healthcheckFlag,
 	}
 
 	// define main command action
@@ -141,9 +172,53 @@ func NewApp(name string) *App { //nolint:funlen,gocognit,gocyclo
 			return logErr
 		}
 
+		setIfFlagIsSet(&app.opt.PidFile, pidFileFlag)
+		setIfFlagIsSet(&app.opt.DoHealthcheck, healthcheckFlag)
 		setIfFlagIsSet(&app.opt.BotToken, botTokenFlag)
 		setIfFlagIsSet(&app.opt.CookiesFile, cookiesFileFlag)
 		setIfFlagIsSet(&app.opt.MaxConcurrentDownloads, maxConcurrentDownloadsFlag)
+
+		if app.opt.DoHealthcheck {
+			if app.opt.PidFile == "" {
+				return errors.New("pid file must be set for healthcheck")
+			}
+
+			b, err := os.ReadFile(app.opt.PidFile)
+			if err != nil {
+				return fmt.Errorf("failed to read pid file: %w", err)
+			}
+
+			pid, err := strconv.Atoi(string(b))
+			if err != nil {
+				return fmt.Errorf("invalid pid in file %s: %w", app.opt.PidFile, err)
+			}
+
+			// check if process is alive. if sig is 0, then no signal is sent, but error checking is still per‐
+			// formed; this can be used to check for the existence of a process ID or process group ID
+			if err = syscall.Kill(pid, syscall.Signal(0)); err != nil {
+				return errors.New("process is not running")
+			}
+
+			log.Info("healthcheck successful", slog.Int("pid", pid), slog.String("pid_file", app.opt.PidFile))
+
+			return nil // healthcheck successful
+		}
+
+		if app.opt.PidFile != "" {
+			// the file shouldn't exist before the bot starts, so we check if it exists
+			if _, err := os.Stat(app.opt.PidFile); err == nil {
+				return fmt.Errorf("pid file already exists: %s (another instance may be running)", app.opt.PidFile)
+			}
+
+			// write the PID to the specified file
+			if err := os.WriteFile(app.opt.PidFile, []byte(strconv.Itoa(os.Getpid())), 0o644); err != nil { //nolint:gosec,mnd
+				return fmt.Errorf("failed to write PID file: %w", err)
+			}
+
+			log.Info("pid file created", "path", app.opt.PidFile)
+
+			defer func() { _ = os.Remove(app.opt.PidFile) }() // remove PID file on exit
+		}
 
 		if app.opt.CookiesFile != "" {
 			// Copy the file with cookies if it is set through environment variables, to
@@ -167,7 +242,7 @@ func NewApp(name string) *App { //nolint:funlen,gocognit,gocyclo
 
 			tmpCookiesFile := filepath.Join(tmpDir, "cookies.txt")
 
-			if err := os.WriteFile(tmpCookiesFile, content, 0o644); err != nil { //nolint:gosec,mnd
+			if err := os.WriteFile(tmpCookiesFile, content, 0o600); err != nil { //nolint:mnd
 				return err
 			}
 
@@ -205,7 +280,7 @@ func (a *App) run(ctx context.Context, log *slog.Logger) error {
 	if a.opt.CookiesFile != "" {
 		botOpts = append(botOpts, bot.WithCookiesFile(a.opt.CookiesFile))
 	} else {
-		log.Warn("No cookies file provided, some sites may not work without it")
+		log.Warn("no cookies file provided, some sites may not work without it")
 	}
 
 	b, err := bot.NewBot(ctx, a.opt.BotToken, botOpts...)

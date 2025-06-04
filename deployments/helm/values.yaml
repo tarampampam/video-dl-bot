@@ -33,8 +33,16 @@ deployment:
     runAsGroup: 10001 # as defined in the Dockerfile
     readOnlyRootFilesystem: false # when you mount a volume, you can set this to true
   resources:
-    requests: {memory: 256Mi}
+    requests: {memory: 128Mi} # python and ffmpeg require more memory than app itself
     limits: {memory: 512Mi}
+  livenessProbe:
+    exec: {command: ["/bin/video-dl-bot", "--healthcheck"]}
+    initialDelaySeconds: 3
+    periodSeconds: 10
+  readinessProbe:
+    exec: {command: ["/bin/video-dl-bot", "--healthcheck"]}
+    initialDelaySeconds: 3
+    periodSeconds: 10
   # -- Additional volumes to add to the pod, more information can be found here:
   #    https://kubernetes.io/docs/concepts/storage/volumes/
   volumes: [] # supports templating
@@ -62,6 +70,10 @@ config:
     # -- Logging format (console|json)
     # @default json (defined in the Dockerfile)
     format: null
+
+  # -- Path to the file with the pid of the process (used for health checks)
+  # @default /tmp/video-dl-bot.pid (defined in the Dockerfile)
+  pidFile: null
 
   botToken:
     # -- Telegram bot token, provided as a plain value

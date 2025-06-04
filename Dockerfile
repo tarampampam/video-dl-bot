@@ -1,8 +1,5 @@
 # syntax=docker/dockerfile:1
 
-# -✂- this is the base image with python installed --------------------------------------------------------------------
-FROM docker.io/library/python:3.13-slim-bookworm AS python
-
 # -✂- this stage is used to download the latest version of FFmpeg -----------------------------------------------------
 # later you can copy FFmpeg binaries from this image step like this (glibc is required):
 # COPY --from=ffmpeg /bin/ffmpeg /bin/ffprobe /bin/
@@ -35,61 +32,40 @@ RUN set -x \
     && wget -O /bin/yt-dlp "https://github.com/yt-dlp/yt-dlp/releases/download/${YT_DLP_VERSION}/yt-dlp" \
     && chmod +x /bin/yt-dlp
 
-# -✂- this stage is used to develop and build the app -----------------------------------------------------------------
-FROM python AS develop
-
-# install Go using the official image and copy all required binaries
-COPY --from=public.ecr.aws/docker/library/golang:1.24-bookworm /usr/local/go /usr/local/go
-COPY --from=ffmpeg /bin/ffmpeg /bin/ffprobe /bin/
-COPY --from=yt-dlp /bin/yt-dlp /bin/yt-dlp
-
-ENV \
-  # add Go binaries to the PATH
-  PATH="$PATH:/go/bin:/usr/local/go/bin" \
-  # use the /var/tmp/go as the GOPATH to reuse the modules cache
-  GOPATH="/var/tmp/go" \
-  # set path to the Go cache (think about this as a "object files cache")
-  GOCACHE="/var/tmp/go/cache"
-
-RUN set +x \
-    # precompile the standard library
-    && go build std \
-    # allow anyone to read/write the Go cache
-    && find /var/tmp/go -type d -exec chmod 0777 {} + \
-    && find /var/tmp/go -type f -exec chmod 0666 {} +
-
-RUN set -x \
-    # ensure everything is installed correctly
-    && go version \
-    && python3 --version \
-    && ffmpeg -version \
-    && ffprobe -version \
-    && yt-dlp --version
-
 # -✂- this stage is used to compile the application -------------------------------------------------------------------
-# later you can copy the compiled binary from this image step like this:
-# COPY --from=compiler /src/video-dl-bot /bin/video-dl-bot
-FROM develop AS compiler
-
-# can be passed with any prefix (like `v1.2.3@FOO`), e.g.: `docker build --build-arg "APP_VERSION=v1.2.3@FOO" .`
-ARG APP_VERSION="undefined@docker"
+# later you can copy the compiled binary (with all the required files) from this image step like this:
+FROM docker.io/library/golang:1.24-alpine AS compiler
 
 # copy the source code
 COPY . /src
 WORKDIR /src
 
+# can be passed with any prefix (like `v1.2.3@FOO`), e.g.: `docker build --build-arg "APP_VERSION=v1.2.3@FOO" .`
+ARG APP_VERSION="undefined@docker"
+
 RUN set -x \
-    # build the app itself
+    # build the app
     && go generate -skip readme ./... \
     && CGO_ENABLED=0 go build \
       -trimpath \
       -ldflags "-s -w -X gh.tarampamp.am/video-dl-bot/internal/version.version=${APP_VERSION}" \
       -o ./video-dl-bot \
       ./cmd/video-dl-bot/ \
-    && ./video-dl-bot --help
+    && ./video-dl-bot --help \
+    # prepare rootfs for runtime
+    && mkdir -p /tmp/rootfs \
+    && cd /tmp/rootfs \
+    && mkdir -p ./etc ./bin \
+    && echo 'video-dl-bot:x:10001:10001::/nonexistent:/sbin/nologin' > ./etc/passwd \
+    && echo 'video-dl-bot:x:10001:' > ./etc/group \
+    && mv /src/video-dl-bot ./bin/video-dl-bot
 
 # -✂- and this is the final stage -------------------------------------------------------------------------------------
-FROM python AS runtime
+FROM docker.io/library/python:3.13-alpine AS runtime
+
+COPY --from=ffmpeg /bin/ffmpeg /bin/ffprobe /bin/
+COPY --from=yt-dlp /bin/yt-dlp /bin/yt-dlp
+COPY --from=compiler /tmp/rootfs /
 
 ARG APP_VERSION="undefined@docker"
 
@@ -103,24 +79,7 @@ LABEL \
     org.opencontainers.version="$APP_VERSION" \
     org.opencontainers.image.licenses="MIT"
 
-COPY --from=ffmpeg /bin/ffmpeg /bin/ffprobe /bin/
-COPY --from=yt-dlp /bin/yt-dlp /bin/yt-dlp
-COPY --from=compiler /src/video-dl-bot /bin/video-dl-bot
-
-# prepare the rootfs for scratch
-RUN set -x \
-    && echo 'video-dl-bot:x:10001:10001::/tmp:/sbin/nologin' >> /etc/passwd \
-    && echo 'video-dl-bot:x:10001:' >> /etc/group
-
-# use an unprivileged user
 USER 10001:10001
-
 WORKDIR /tmp
-
-ENV \
-  # logging format
-  LOG_FORMAT=json \
-  # logging level
-  LOG_LEVEL=info
-
+ENV HOME=/tmp LOG_FORMAT=json LOG_LEVEL=info PID_FILE=/tmp/video-dl-bot.pid
 ENTRYPOINT ["/bin/video-dl-bot"]
