@@ -43,6 +43,11 @@ deployment:
     exec: {command: ["/bin/video-dl-bot", "--healthcheck"]}
     initialDelaySeconds: 3
     periodSeconds: 10
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 0 # no additional Pods will be created during the rollout
+      maxUnavailable: 1 # the old Pod will be terminated before a new one is started
   # -- Additional volumes to add to the pod, more information can be found here:
   #    https://kubernetes.io/docs/concepts/storage/volumes/
   volumes: [] # supports templating

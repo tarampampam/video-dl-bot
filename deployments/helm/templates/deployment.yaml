@@ -11,6 +11,8 @@ metadata:
 spec:
   {{- with .Values.deployment }}
   replicas: 1
+  strategy:
+    {{- toYaml .strategy | nindent 4 }}
   selector:
     matchLabels:
       {{- include "videoDownloaderBot.selectorLabels" $ | nindent 6 }}

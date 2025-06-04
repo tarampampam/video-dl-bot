@@ -104,6 +104,12 @@
             "periodSeconds": {"type": "integer", "minimum": 1}
           }
         },
+        "strategy": {
+          "type": "object",
+          "properties": {
+            "type": {"type": "string"}
+          }
+        },
         "volumes": {
           "type": "array",
           "items": {
