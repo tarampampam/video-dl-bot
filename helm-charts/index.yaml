@@ -2,8 +2,27 @@ apiVersion: v1
 entries:
   video-dl-bot:
   - apiVersion: v2
+    appVersion: 0.0.7
+    created: "2025-06-04T11:41:06.040774384Z"
+    description: Telegram bot for downloading videos
+    digest: 798779e4d54aa0b2eea8ec742bd18c5ff78829655cd2a4f50effa963ed5cf823
+    home: https://github.com/tarampampam/video-dl-bot
+    icon: https://habrastorage.org/webt/br/yj/na/bryjnah7fo3v1llg_aha02e25es.png
+    keywords:
+    - telegram
+    - yt-dlp
+    - bot
+    - video
+    name: video-dl-bot
+    sources:
+    - https://github.com/tarampampam/video-dl-bot
+    type: application
+    urls:
+    - https://tarampampam.github.io/video-dl-bot/helm-charts/video-dl-bot-0.0.7.tgz
+    version: 0.0.7
+  - apiVersion: v2
     appVersion: 0.0.6
-    created: "2025-06-04T11:21:44.963485402Z"
+    created: "2025-06-04T11:41:06.040308381Z"
     description: Telegram bot for downloading videos
     digest: eb2717500f70122222338f6f43f2efad6486bf691f6c07c2f32dcb11054d03a1
     home: https://github.com/tarampampam/video-dl-bot
@@ -22,7 +41,7 @@ entries:
     version: 0.0.6
   - apiVersion: v2
     appVersion: 0.0.5
-    created: "2025-06-04T11:21:44.963100146Z"
+    created: "2025-06-04T11:41:06.039850772Z"
     description: Telegram bot for downloading videos
     digest: 6bdc5e7fd9783a2e639c5cfbcd611d0abddb67dcc2ade091f962672abe2f0ec2
     home: https://github.com/tarampampam/video-dl-bot
@@ -39,4 +58,4 @@ entries:
     urls:
     - https://tarampampam.github.io/video-dl-bot/helm-charts/video-dl-bot-0.0.5.tgz
     version: 0.0.5
-generated: "2025-06-04T11:21:44.962559452Z"
+generated: "2025-06-04T11:41:06.038407224Z"
