@@ -28,7 +28,7 @@ FROM docker.io/library/alpine:latest AS yt-dlp
 
 RUN set -x \
     # renovate: source=github-tags name=yt-dlp/yt-dlp
-    && YT_DLP_VERSION="2025.05.22" \
+    && YT_DLP_VERSION="2025.09.26" \
     && wget -O /bin/yt-dlp "https://github.com/yt-dlp/yt-dlp/releases/download/${YT_DLP_VERSION}/yt-dlp" \
     && chmod +x /bin/yt-dlp
 
