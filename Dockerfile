@@ -61,7 +61,7 @@ RUN set -x \
     && mv /src/video-dl-bot ./bin/video-dl-bot
 
 # -✂- and this is the final stage -------------------------------------------------------------------------------------
-FROM docker.io/library/python:3.13-slim AS runtime
+FROM docker.io/library/python:3.13.7-slim AS runtime
 
 COPY --from=ffmpeg /bin/ffmpeg /bin/ffprobe /bin/
 COPY --from=yt-dlp /bin/yt-dlp /bin/yt-dlp
