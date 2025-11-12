@@ -26,6 +26,19 @@ powered by `yt-dlp`, it supports downloading from any platform that `yt-dlp` sup
 
 [yt-dlp-supported-sites]: https://github.com/yt-dlp/yt-dlp/blob/master/supportedsites.md
 
+## 👍 Usage
+
+Once your bot is running, simply send it a message containing a video link. The bot will:
+
+- Extract the URL from your message (works with forwarded messages too)
+- Show progress through message reactions
+- Update its status to show what it's doing (e.g., "recording video")
+- Either:
+  - Send the video directly in chat (if under 50 MB)
+  - Upload to `filebin.net` and provide a download link (if over 50 MB)
+
+No special commands are needed - just send the link!
+
 ## 🐋 Docker image
 
 | Registry                          | Image                              |
@@ -161,20 +174,6 @@ Many platforms, especially YouTube, require authentication to avoid rate limitin
 cookies, you may only be able to download a few videos before encountering errors.
 
 For more details on authentication and cookies, see the [yt-dlp FAQ](https://github.com/yt-dlp/yt-dlp/wiki/FAQ).
-
-## 👍 Usage
-
-Once your bot is running, simply send it a message containing a video link. The bot will:
-
-1. Extract the URL from your message (works with forwarded messages too)
-2. Show progress through message reactions
-3. Update its status to show what it's doing (e.g., "recording video")
-4. Either:
-
-- Send the video directly in chat (if under 50 MB)
-- Upload to `filebin.net` and provide a download link (if over 50 MB)
-
-No special commands are needed - just send the link!
 
 ## 👾 Support
 
