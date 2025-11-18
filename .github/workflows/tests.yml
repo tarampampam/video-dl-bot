@@ -62,4 +62,5 @@ jobs:
       - run: docker run --rm --entrypoint yt-dlp app:local --version
       - run: docker run --rm --entrypoint ffmpeg app:local -version
       - run: docker run --rm --entrypoint ffprobe app:local -version
+      - run: docker run --rm --entrypoint node app:local --version
       - run: docker run --rm --entrypoint video-dl-bot app:local --version
