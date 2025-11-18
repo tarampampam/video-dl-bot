@@ -63,7 +63,7 @@ RUN set -x \
 # -✂- and this is the final stage -------------------------------------------------------------------------------------
 FROM docker.io/library/python:3.14-slim AS runtime
 
-# install nodejs
+# install nodejs (https://github.com/yt-dlp/yt-dlp/issues/15012)
 RUN set -x \
     && apt update \
     && apt install nodejs -y \
