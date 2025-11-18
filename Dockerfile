@@ -61,10 +61,18 @@ RUN set -x \
     && mv /src/video-dl-bot ./bin/video-dl-bot
 
 # -✂- and this is the final stage -------------------------------------------------------------------------------------
-FROM docker.io/library/python:3.14-slim AS runtime
+FROM docker.io/library/python:3.14-alpine AS runtime
 
 COPY --from=ffmpeg /bin/ffmpeg /bin/ffprobe /bin/
 COPY --from=yt-dlp /bin/yt-dlp /bin/yt-dlp
+
+# install nodejs using the official image (https://github.com/yt-dlp/yt-dlp/issues/15012)
+RUN --mount=type=bind,from=docker.io/library/node:25-alpine,source=/,target=/mnt \
+    set -x \
+    && cp /mnt/usr/local/bin/node /usr/local/bin/ \
+    && cp /mnt/usr/lib/libgcc_s.so.1 /mnt/usr/lib/libstdc++.so.6 /usr/lib/ \
+    && node --version
+
 COPY --from=compiler /tmp/rootfs/bin/video-dl-bot /bin/video-dl-bot
 COPY --from=compiler /tmp/rootfs/etc/passwd /tmp/rootfs/etc/group /etc/
 
