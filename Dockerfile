@@ -28,7 +28,7 @@ FROM docker.io/library/alpine:latest AS yt-dlp
 
 RUN set -x \
     # renovate: source=github-tags name=yt-dlp/yt-dlp
-    && YT_DLP_VERSION="2025.10.22" \
+    && YT_DLP_VERSION="2025.11.12" \
     && wget -O /bin/yt-dlp "https://github.com/yt-dlp/yt-dlp/releases/download/${YT_DLP_VERSION}/yt-dlp" \
     && chmod +x /bin/yt-dlp
 
@@ -62,6 +62,12 @@ RUN set -x \
 
 # -✂- and this is the final stage -------------------------------------------------------------------------------------
 FROM docker.io/library/python:3.14-slim AS runtime
+
+# install nodejs (https://github.com/yt-dlp/yt-dlp/issues/15012)
+RUN set -x \
+    && apt update \
+    && apt install nodejs -y \
+    && rm -r /var/lib/apt/lists/*
 
 COPY --from=ffmpeg /bin/ffmpeg /bin/ffprobe /bin/
 COPY --from=yt-dlp /bin/yt-dlp /bin/yt-dlp
