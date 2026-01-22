@@ -47,7 +47,7 @@ jobs:
           helm package \
             --app-version "${{ steps.slug.outputs.version-semantic }}" \
             --version "${{ steps.slug.outputs.version-semantic }}" .
-      - uses: actions/upload-artifact@v5
+      - uses: actions/upload-artifact@v6
         with:
           name: helm-chart
           path: ./deployments/helm/*.tgz
@@ -61,7 +61,7 @@ jobs:
     steps:
       - {uses: actions/checkout@v4, with: {ref: gh-pages}}
       - uses: azure/setup-helm@v4
-      - uses: actions/download-artifact@v6
+      - uses: actions/download-artifact@v7
         with: {name: helm-chart, path: ./helm-charts}
       - name: Update the index.yaml
         run: |
