@@ -131,14 +131,15 @@ For more configuration options, see the [Helm chart documentation][artifacthub].
 
 ### Environment Variables
 
-| Variable                   | Description                                     | Default   |
-|----------------------------|-------------------------------------------------|-----------|
-| `BOT_TOKEN`                | Telegram bot token (required)                   | -         |
-| `COOKIES_FILE`             | Path to cookies file in Netscape format         | -         |
-| `MAX_CONCURRENT_DOWNLOADS` | Maximum number of parallel downloads            | `5`       |
-| `LOG_LEVEL`                | Logging level: `debug`, `info`, `warn`, `error` | `info`    |
-| `LOG_FORMAT`               | Logging format: `console`, `json`               | `console` |
-| `PID_FILE`                 | Path to PID file for healthchecks               | -         |
+| Variable                   | Description                                                                                  | Default   |
+|----------------------------|----------------------------------------------------------------------------------------------|-----------|
+| `BOT_TOKEN`                | Telegram bot token (required)                                                                | -         |
+| `COOKIES_FILE`             | Path to cookies file in Netscape format                                                      | -         |
+| `JS_RUNTIMES`              | JavaScript runtimes for yt-dlp (e.g. `node`, `node:/path/to/node`, `bun`, `deno`, `quickjs`) | -         |
+| `MAX_CONCURRENT_DOWNLOADS` | Maximum number of parallel downloads                                                         | `5`       |
+| `LOG_LEVEL`                | Logging level: `debug`, `info`, `warn`, `error`                                              | `info`    |
+| `LOG_FORMAT`               | Logging format: `console`, `json`                                                            | `console` |
+| `PID_FILE`                 | Path to PID file for healthchecks                                                            | -         |
 
 <!--GENERATED:APP_README-->
 ## 💻 Command line interface
