@@ -29,6 +29,7 @@ type App struct {
 
 		BotToken               string
 		CookiesFile            string
+		JSRuntimes             string // JavaScript runtimes for yt-dlp
 		MaxConcurrentDownloads uint
 	}
 }
@@ -112,6 +113,27 @@ func NewApp(name string) *App { //nolint:funlen,gocognit,gocyclo
 				return nil
 			},
 		}
+		jsRuntimesFlag = cmd.Flag[string]{
+			Names:   []string{"js-runtimes"},
+			Usage:   "JavaScript runtimes for yt-dlp (e.g. 'node', 'node:/path/to/node', 'bun', 'deno', 'quickjs')",
+			EnvVars: []string{"JS_RUNTIMES"},
+			Default: app.opt.JSRuntimes,
+			Validator: func(_ *cmd.Command, v string) error {
+				if v == "" {
+					return nil // allow empty value (yt-dlp will use its own defaults)
+				}
+
+				// deny quotes and semicolons to prevent command injection, as these runtimes are passed to yt-dlp
+				// which may execute them
+				for _, char := range v {
+					if char == '"' || char == '\'' || char == ';' || char == '&' || char == '|' {
+						return fmt.Errorf("js runtimes cannot contain quotes, semicolons, or shell operators")
+					}
+				}
+
+				return nil
+			},
+		}
 		maxConcurrentDownloadsFlag = cmd.Flag[uint]{
 			Names:   []string{"max-concurrent-downloads", "m"},
 			Usage:   "Maximum number of concurrent downloads",
@@ -155,6 +177,7 @@ func NewApp(name string) *App { //nolint:funlen,gocognit,gocyclo
 		&logFormatFlag,
 		&botTokenFlag,
 		&cookiesFileFlag,
+		&jsRuntimesFlag,
 		&maxConcurrentDownloadsFlag,
 		&pidFileFlag,
 		&healthcheckFlag,
@@ -176,6 +199,7 @@ func NewApp(name string) *App { //nolint:funlen,gocognit,gocyclo
 		setIfFlagIsSet(&app.opt.DoHealthcheck, healthcheckFlag)
 		setIfFlagIsSet(&app.opt.BotToken, botTokenFlag)
 		setIfFlagIsSet(&app.opt.CookiesFile, cookiesFileFlag)
+		setIfFlagIsSet(&app.opt.JSRuntimes, jsRuntimesFlag)
 		setIfFlagIsSet(&app.opt.MaxConcurrentDownloads, maxConcurrentDownloadsFlag)
 
 		if app.opt.DoHealthcheck {
@@ -281,6 +305,13 @@ func (a *App) run(ctx context.Context, log *slog.Logger) error {
 		botOpts = append(botOpts, bot.WithCookiesFile(a.opt.CookiesFile))
 	} else {
 		log.Warn("no cookies file provided, some sites may not work without it")
+	}
+
+	if a.opt.JSRuntimes != "" {
+		botOpts = append(botOpts, bot.WithJSRuntimes(a.opt.JSRuntimes))
+		log.Info("custom JavaScript runtimes provided for yt-dlp", "runtimes", a.opt.JSRuntimes)
+	} else {
+		log.Info("no custom JavaScript runtimes provided, yt-dlp defaults will be used")
 	}
 
 	b, err := bot.NewBot(ctx, a.opt.BotToken, botOpts...)

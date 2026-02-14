@@ -233,6 +233,9 @@
         "cookiesFile": {
           "oneOf": [{"type": "string", "minLength": 1}, {"type": "null"}]
         },
+        "jsRuntimes": {
+          "oneOf": [{"type": "string", "minLength": 1}, {"type": "null"}]
+        },
         "maxConcurrentDownloads": {
           "oneOf": [{"type": "integer", "minimum": 1, "maximum": 100}, {"type": "null"}]
         }

@@ -37,6 +37,11 @@ type (
 		runner      runner // Interface to run system commands
 		exePath     string // Path to yt-dlp binary
 		cookiesFile string // Path to cookies file (optional, for sites requiring authentication)
+
+		// To download from YouTube, yt-dlp needs to solve JavaScript challenges presented by YouTube using an
+		// external JavaScript runtime. This involves running challenge solver scripts maintained at yt-dlp-ejs
+		// (https://github.com/yt-dlp/ejs).
+		jsRuntimes string // e.g., "node", "node:/path/to/node", "bun", "deno", "quickjs"
 	}
 
 	// Option is a function that configures options.
@@ -51,6 +56,9 @@ func WithExePath(path string) Option { return func(o *options) { o.exePath = pat
 
 // WithCookiesFile sets the path to a cookies file for yt-dlp.
 func WithCookiesFile(path string) Option { return func(o *options) { o.cookiesFile = path } }
+
+// WithJSRuntimes sets the JavaScript runtimes for yt-dlp (e.g., "node", "bun", "deno", "quickjs").
+func WithJSRuntimes(runtimes string) Option { return func(o *options) { o.jsRuntimes = runtimes } }
 
 // Apply sets default values and applies any functional options.
 func (o options) Apply(opts ...Option) options {
@@ -137,6 +145,10 @@ func Download(ctx context.Context, in string, opts ...Option) (_ *Downloaded, ou
 			"--cookies", // Netscape formatted file to read cookies from
 			o.cookiesFile,
 		)
+	}
+
+	if o.jsRuntimes != "" {
+		args = append(args, "--js-runtimes", o.jsRuntimes)
 	}
 
 	// run yt-dlp with selected flags

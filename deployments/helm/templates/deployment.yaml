@@ -82,6 +82,9 @@ spec:
             {{- if .cookiesFile }}
             - {name: COOKIES_FILE, value: "{{ .cookiesFile }}"}
             {{- end }}
+            {{- if .jsRuntimes }}
+            - {name: JS_RUNTIMES, value: "{{ .jsRuntimes }}"}
+            {{- end }}
             {{- if .log.level }}
             - {name: LOG_LEVEL, value: "{{ .log.level }}"}
             {{- end }}

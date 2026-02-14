@@ -31,6 +31,7 @@ type (
 	// Bot wraps the Telegram bot client.
 	Bot struct {
 		cookiesFile            string // path to the cookies file (if any)
+		jsRuntimes             string // JavaScript runtimes for yt-dlp (e.g., "node", "bun", "deno", "quickjs")
 		maxConcurrentDownloads uint   // maximum number of concurrent downloads allowed
 
 		log    *slog.Logger
@@ -46,6 +47,9 @@ func WithLogger(log *slog.Logger) Option { return func(b *Bot) { b.log = log } }
 
 // WithCookiesFile sets the path to a cookies file, used by yt-dlp for authenticated downloads.
 func WithCookiesFile(path string) Option { return func(b *Bot) { b.cookiesFile = path } }
+
+// WithJSRuntimes configures the JavaScript runtimes for yt-dlp, allowing support for sites that require JS execution.
+func WithJSRuntimes(runtimes string) Option { return func(b *Bot) { b.jsRuntimes = runtimes } }
 
 // WithMaxConcurrentDownloads limits the number of concurrent downloads the bot can handle.
 func WithMaxConcurrentDownloads(n uint) Option {
@@ -201,6 +205,10 @@ func (b *Bot) handleMessages(pCtx context.Context, lim Limiter) tele.HandlerFunc
 
 		if b.cookiesFile != "" {
 			ytDlpOpts = append(ytDlpOpts, ytdlp.WithCookiesFile(b.cookiesFile))
+		}
+
+		if b.jsRuntimes != "" {
+			ytDlpOpts = append(ytDlpOpts, ytdlp.WithJSRuntimes(b.jsRuntimes))
 		}
 
 		// download the video
