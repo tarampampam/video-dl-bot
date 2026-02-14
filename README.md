@@ -141,7 +141,6 @@ For more configuration options, see the [Helm chart documentation][artifacthub].
 | `PID_FILE`                 | Path to PID file for healthchecks               | -         |
 
 <!--GENERATED:APP_README-->
-
 ## 💻 Command line interface
 
 ```
@@ -159,13 +158,13 @@ Options:
    --log-format="…"                        Logging format (console/json) (default: console) [$LOG_FORMAT]
    --bot-token="…", -t="…"                 Telegram bot token [$BOT_TOKEN]
    --cookies-file="…", -c="…"              Path to the file with cookies (netscape-formatted) for the bot (optional) [$COOKIES_FILE]
+   --js-runtimes="…"                       JavaScript runtimes for yt-dlp (e.g. 'node', 'node:/path/to/node', 'bun', 'deno', 'quickjs') [$JS_RUNTIMES]
    --max-concurrent-downloads="…", -m="…"  Maximum number of concurrent downloads (default: 5) [$MAX_CONCURRENT_DOWNLOADS]
    --pid-file="…"                          Path to the file where the process ID will be stored [$PID_FILE]
    --healthcheck                           Check the health of the bot (useful for Docker/K8s healthcheck; pid file must be set) and exit
    --help, -h                              Show help
    --version, -v                           Print the version
 ```
-
 <!--/GENERATED:APP_README-->
 
 ## 🍪 Using Cookies for Authentication

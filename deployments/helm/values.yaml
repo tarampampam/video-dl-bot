@@ -97,6 +97,9 @@ config:
   # -- Path to the file with cookies (netscape-formatted) for the bot (usually, mounted from a secret)
   cookiesFile: null
 
+  # -- External JS Runtimes (https://github.com/yt-dlp/yt-dlp/wiki/EJS)
+  jsRuntimes: null
+
   # -- Maximum number of concurrent downloads
   # @default 5
   maxConcurrentDownloads: null
