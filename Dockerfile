@@ -34,7 +34,7 @@ RUN set -x \
 
 # -✂- this stage is used to compile the application -------------------------------------------------------------------
 # later you can copy the compiled binary (with all the required files) from this image step like this:
-FROM docker.io/library/golang:1.25-alpine AS compiler
+FROM docker.io/library/golang:1.26-alpine AS compiler
 
 # copy the source code
 COPY . /src
