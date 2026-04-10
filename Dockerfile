@@ -28,13 +28,13 @@ FROM docker.io/library/alpine:latest AS yt-dlp
 
 RUN set -x \
     # renovate: source=github-tags name=yt-dlp/yt-dlp
-    && YT_DLP_VERSION="2026.02.04" \
+    && YT_DLP_VERSION="2026.03.17" \
     && wget -O /bin/yt-dlp "https://github.com/yt-dlp/yt-dlp/releases/download/${YT_DLP_VERSION}/yt-dlp" \
     && chmod +x /bin/yt-dlp
 
 # -✂- this stage is used to compile the application -------------------------------------------------------------------
 # later you can copy the compiled binary (with all the required files) from this image step like this:
-FROM docker.io/library/golang:1.25-alpine AS compiler
+FROM docker.io/library/golang:1.26-alpine AS compiler
 
 # copy the source code
 COPY . /src
