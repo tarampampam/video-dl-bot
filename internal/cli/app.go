@@ -266,7 +266,7 @@ func NewApp(name string) *App { //nolint:funlen,gocognit,gocyclo
 
 			tmpCookiesFile := filepath.Join(tmpDir, "cookies.txt")
 
-			if err := os.WriteFile(tmpCookiesFile, content, 0o600); err != nil { //nolint:mnd
+			if err := os.WriteFile(tmpCookiesFile, content, 0o600); err != nil { //nolint:mnd,gosec
 				return err
 			}
 

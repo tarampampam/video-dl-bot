@@ -114,7 +114,7 @@ func (f *Flag[T]) Help() (names string, usage string) {
 		}
 
 		b.WriteString("(default: ")
-		b.WriteString(fmt.Sprintf("%v", f.Default))
+		fmt.Fprintf(&b, "%v", f.Default)
 		b.WriteRune(')')
 	}
 
