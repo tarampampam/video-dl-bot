@@ -1,7 +1,5 @@
-## Ignore everything
+# Ignore everything by default
 *
 
-## Except the following files and directories
-!/cmd
-!/internal
-!/go.*
+# Exceptions
+!/requirements-ytdlp.txt
