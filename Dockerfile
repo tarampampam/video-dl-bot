@@ -26,9 +26,15 @@ RUN set -x \
 # COPY --from=yt-dlp /bin/yt-dlp /bin/yt-dlp
 FROM docker.io/library/alpine:latest AS yt-dlp
 
+COPY requirements-ytdlp.txt /tmp/requirements-ytdlp.txt
+
 RUN set -x \
-    # renovate: source=github-tags name=yt-dlp/yt-dlp
-    && YT_DLP_VERSION="2026.03.17" \
+    && apk add --no-cache python3 wget \
+    && YT_DLP_VERSION="$(python3 -c " \
+import re, sys; \
+m = re.search(r'(?m)^yt-dlp==([^\s]+)\s*$', open('/tmp/requirements-ytdlp.txt').read()); \
+print('ERROR: yt-dlp pin not found in requirements-ytdlp.txt', file=sys.stderr) or sys.exit(1) if not m else print(m.group(1)) \
+")" \
     && wget -O /bin/yt-dlp "https://github.com/yt-dlp/yt-dlp/releases/download/${YT_DLP_VERSION}/yt-dlp" \
     && chmod +x /bin/yt-dlp
 

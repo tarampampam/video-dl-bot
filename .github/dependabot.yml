@@ -18,6 +18,11 @@ updates:
     groups: {docker: {patterns: ['*']}}
     assignees: [tarampampam]
 
+  - package-ecosystem: pip
+    directory: /
+    schedule: {interval: daily, time: '02:00', timezone: 'Etc/UTC'}
+    assignees: [tarampampam]
+
   - package-ecosystem: gomod
     directory: /
     schedule: {interval: monthly, time: '02:00', timezone: 'Etc/UTC'}
