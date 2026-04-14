@@ -30,4 +30,7 @@ updates:
     schedule: {interval: daily, time: '02:00', timezone: 'Etc/UTC'}
     allow:
       - dependency-name: yt-dlp
+      ignore:
+      - dependency-name: yt-dlp
+        versions: ['*.dev*']
     assignees: [tarampampam]
