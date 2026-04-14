@@ -28,7 +28,7 @@ FROM docker.io/library/alpine:latest AS yt-dlp
 
 RUN --mount=type=bind,source=requirements-ytdlp.txt,target=/tmp/requirements-ytdlp.txt,readonly \
     set -x \
-    && YT_DLP_VERSION="$(sed -n 's/^yt-dlp==\([0-9A-Za-z._-]\+\).*$/\1/p' /tmp/requirements-ytdlp.txt | head -n1)" \
+    && YT_DLP_VERSION="$(awk -F'[=.]' '/^yt-dlp==/{printf "%d.%02d.%02d", $3, $4, $5; exit}' /tmp/requirements-ytdlp.txt)" \
     && wget -O /bin/yt-dlp "https://github.com/yt-dlp/yt-dlp/releases/download/${YT_DLP_VERSION}/yt-dlp" \
     && chmod +x /bin/yt-dlp
 
