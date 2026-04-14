@@ -26,9 +26,9 @@ RUN set -x \
 # COPY --from=yt-dlp /bin/yt-dlp /bin/yt-dlp
 FROM docker.io/library/alpine:latest AS yt-dlp
 
-RUN set -x \
-    # renovate: source=github-tags name=yt-dlp/yt-dlp
-    && YT_DLP_VERSION="2026.03.17" \
+RUN --mount=type=bind,source=requirements-ytdlp.txt,target=/tmp/requirements-ytdlp.txt,readonly \
+    set -x \
+    && YT_DLP_VERSION="$(awk -F'[=.]' '/^yt-dlp==/{printf "%d.%02d.%02d", $3, $4, $5; exit}' /tmp/requirements-ytdlp.txt)" \
     && wget -O /bin/yt-dlp "https://github.com/yt-dlp/yt-dlp/releases/download/${YT_DLP_VERSION}/yt-dlp" \
     && chmod +x /bin/yt-dlp
 
