@@ -63,10 +63,12 @@ RUN set -x \
 # -✂- and this is the final stage -------------------------------------------------------------------------------------
 FROM docker.io/library/python:3.14.5-slim AS runtime
 
-# install nodejs (https://github.com/yt-dlp/yt-dlp/issues/15012)
+# install nodejs 24 (https://github.com/yt-dlp/yt-dlp/issues/15012)
 RUN set -x \
     && apt update \
-    && apt install nodejs -y \
+    && apt install -y curl \
+    && curl -fsSL https://deb.nodesource.com/setup_24.x | bash - \
+    && apt install -y nodejs \
     && rm -r /var/lib/apt/lists/*
 
 COPY --from=ffmpeg /bin/ffmpeg /bin/ffprobe /bin/
