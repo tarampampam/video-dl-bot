@@ -34,7 +34,7 @@ RUN --mount=type=bind,source=requirements-ytdlp.txt,target=/tmp/requirements-ytd
 
 # -✂- this stage is used to compile the application -------------------------------------------------------------------
 # later you can copy the compiled binary (with all the required files) from this image step like this:
-FROM docker.io/library/golang:1.26.3-alpine AS compiler
+FROM docker.io/library/golang:1.26.4-alpine AS compiler
 
 # copy the source code
 COPY . /src
@@ -61,7 +61,7 @@ RUN set -x \
     && mv /src/video-dl-bot ./bin/video-dl-bot
 
 # -✂- and this is the final stage -------------------------------------------------------------------------------------
-FROM docker.io/library/python:3.14.5-slim AS runtime
+FROM docker.io/library/python:3.14.6-slim AS runtime
 
 # install nodejs 24 (https://github.com/yt-dlp/yt-dlp/issues/15012)
 RUN set -x \
